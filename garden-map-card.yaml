@@ -1,0 +1,60 @@
+type: custom:garden-map-card
+entity: sensor.robot_funyiro_anthbot_map
+name: Kert
+image: /local/garden-map-card/garden.png?v=1
+mowed_path_color: rgba(255, 235, 59, 0.82)
+mowed_path_width: 10
+show_mowed_coverage: true
+mowed_coverage_width: 360
+mowed_path_source: auto
+fit: cover
+mobile_map_rotation: 90
+mobile_map_fit: contain
+mobile_robot_size: 24
+refresh_interval: 3
+default_system: robot
+entities:
+  battery: sensor.robot_funyiro_anthbot_battery_level
+  status: sensor.robot_funyiro_anthbot_mower_status
+  charging: binary_sensor.robot_funyiro_anthbot_charging
+controls:
+  start: button.robot_funyiro_anthbot_start_full_mow
+  stop: button.robot_funyiro_anthbot_stop_mow
+  dock: button.robot_funyiro_anthbot_return_to_dock
+calibration: { offsetX: -0.01, offsetY: -0.03, scaleX: 1.28, scaleY: 1.18, rotation: 1.570797 }
+robotCalibration: { offsetX: 0.0043, offsetY: 0, scaleX: 0.5, rotation: 4.656893 }
+decodedBoundaryCalibration: { offsetX: -0.01, offsetY: -0.002, scaleX: 1.04, scaleY: 1.02, rotation: 0 }
+boundary_width: 3
+boundary_color: rgba(74, 101, 255, 0.9)
+show_decoded_boundary: false
+show_zones: false
+show_no_go_zones: true
+show_no_go_labels: true
+robot_heading_source: cloud
+irrigation:
+  type: custom:irrigation-map-card
+  name: Locsolorendszer
+  language: auto
+  zones:
+    - { id: 1, name: "Zona 1", entity: switch.6_zonas_intelligens_szelepvezerlo_1_aljzat, color: "#38bdf8" }
+    - { id: 2, name: "Zona 2", entity: switch.6_zonas_intelligens_szelepvezerlo_2_aljzat, color: "#22c55e" }
+    - { id: 3, name: "Zona 3", entity: switch.6_zonas_intelligens_szelepvezerlo_3_aljzat, color: "#f59e0b" }
+    - { id: 4, name: "Zona 4", entity: switch.6_zonas_intelligens_szelepvezerlo_4_aljzat, color: "#a855f7" }
+    - { id: 5, name: "Fenyő kapu", entity: switch.kerticsap_kapu_fenyo, color: "#ef4444" }
+  heads:
+    - { id: 1, name: "1", zone: 3, x: 0.0366, y: 0.71, radius: 9 }
+    - { id: 2, name: "2", zone: 3, x: 0.0352, y: 0.2314, radius: 9 }
+    - { id: 3, name: "3", zone: 3, x: 0.1483, y: 0.234, radius: 9 }
+    - { id: 4, name: "4", zone: 4, x: 0.2342, y: 0.7074, radius: 9 }
+    - { id: 5, name: "5", zone: 4, x: 0.2499, y: 0.4503, radius: 9 }
+    - { id: 6, name: "6", zone: 4, x: 0.5162, y: 0.4452, radius: 9 }
+    - { id: 7, name: "7", zone: 1, x: 0.2599, y: 0.0991, radius: 9 }
+    - { id: 8, name: "8", zone: 1, x: 0.4146, y: 0.1296, radius: 9 }
+    - { id: 9, name: "9", zone: 1, x: 0.6437, y: 0.1271, radius: 9 }
+    - { id: 10, name: "10", zone: 1, x: 0.8269, y: 0.038, radius: 9 }
+    - { id: 11, name: "11", zone: 2, x: 0.9472, y: 0.2501, radius: 9 }
+    - { id: 12, name: "12", zone: 2, x: 0.7696, y: 0.2984, radius: 9 }
+    - { id: 13, name: "13", zone: 2, x: 0.6164, y: 0.3112, radius: 9 }
+    - { id: 14, name: "14", zone: 5, x: 0.9673, y: 0.722, radius: 9 }
+    - { id: 15, name: "15", zone: 4, x: 0.3632, y: 0.4359, radius: 9 }
+  drip_lines: []

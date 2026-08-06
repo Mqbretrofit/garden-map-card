@@ -1,0 +1,61 @@
+GARDEN MAP CARD v130 – TELJES FORDÍTÁS ÉS TÉRKÉPJAVÍTÁSOK
+
+Ez a verzió a megtartott v128-as felületre épül:
+- külön Robot és Locsolás nézet;
+- a locsolófejek kijelölésekor látható marad a térkép;
+- a mobilos térképbeállítások és az öntözési funkciók változatlanok;
+- a kiválasztott nyelv és a térképi kapcsolók oldalfrissítés után is megmaradnak;
+- a határvonal színe és vastagsága a dekódolt határvonalon is pontosan működik;
+- térképhúzás után nem nyílik meg véletlenül a nagy térkép;
+- szerkesztési módban is elérhető a nagy térkép bezáró gombja;
+- a tiltott zóna felirata külön kapcsolható, és eltűnik, amikor a zóna kikerül a látható térképről;
+- javított, belső átlátszó lyukak nélküli robotkép.
+- új Csepegtető szerkesztési mód a locsolófejek mellett;
+- a csepegtető kezdő- és végpontja két térképkattintással kijelölhető;
+- a csepegtető bármely meglévő zónához, például a 3-as zónához rendelhető;
+- a vonal a hozzárendelt zóna működésekor kéken pulzál és animált vízjelzést kap;
+- szerkesztési módban a csepegtető vonalára kattintva törölhető;
+- a csepegtetők a YAML-ban a drip_lines lista alatt menthetők.
+- a teljes piros tiltott zóna külön kapcsolóval megjeleníthető vagy elrejthető;
+- a tiltott zóna feliratának kapcsolója továbbra is külön működik;
+- mindkét beállítás megmarad oldalfrissítés után és YAML-ból is beállítható.
+- a nyelvváltás azonnal frissíti a teljes kártyafelületet;
+- mind a 23 támogatott nyelv összes kártyafelirata ki lett egészítve.
+
+TELEPÍTÉS
+
+1. A ZIP-ben található garden-map-card mappát másold ide, mindent felülírva:
+   /config/www/garden-map-card/
+
+2. A Garden Map Card Lovelace-erőforrása legyen:
+   /local/garden-map-card/garden-map-card.js?v=130
+   Típusa: JavaScript-modul
+
+3. A garden-map-card már saját maga, külön belső kártyaként tölti be a
+   mellékelt irrigation-map-card.js fájlt. Ehhez nem kell új Lovelace-erőforrás,
+   és a külön telepített irrigation-map-card verzióját sem zavarja.
+
+4. A mellékelt irrigation_scheduler.yaml fájllal írd felül a jelenlegi
+   irrigation_scheduler.yaml csomagodat.
+
+5. Indítsd újra egyszer a Home Assistantot. Erre az öt új, zónánkénti
+   kézi időzítő létrehozása miatt van szükség.
+
+6. Frissítsd a böngészőt vagy a Home Assistant mobilalkalmazást.
+
+CSEPEGTETŐ KIJELÖLÉSE
+
+1. Válts a Locsolás nézetre, majd nyisd le az Öntözőelemek kijelölése részt.
+2. Kapcsold be az Elemek jelölése módot.
+3. Válaszd a Csepegtető típust és a hozzá tartozó zónát, például a 3-as zónát.
+4. Kattints a térképen a csepegtető kezdőpontjára, majd a végpontjára.
+5. Meglévő csepegtető törléséhez Csepegtető módban kattints a vonalára.
+6. Másold ki és mentsd el a kártya frissített YAML-konfigurációját.
+
+ÚJ MŰKÖDÉS
+- Több kézi öntözési zóna egyszerre futhat.
+- Egy aktív zóna ismételt megnyomása csak azt a zónát állítja le.
+- Minden kézi zónának saját időzítője van.
+- Minden aktív kézi zónán külön látható a hátralévő idő.
+- Kézi üzemmódban minden aktív zóna saját, teljes szélességű zöld állapotsort kap.
+- A központi Stop gomb továbbra is minden öntözést leállít.
