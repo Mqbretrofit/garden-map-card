@@ -8,9 +8,22 @@ v158
 
 ## Installation
 
-Copy the repository files to:
+Copy these frontend files from the repository root to:
 
 `/config/www/garden-map-card/`
+
+The required files include `garden-map-card.js`, `irrigation-map-card.js`, the renderer, styles, translations and images.
+
+Copy the scheduler package separately:
+
+`packages/irrigation_scheduler.yaml` → `/config/packages/irrigation_scheduler.yaml`
+
+Your `configuration.yaml` must load the packages directory:
+
+```yaml
+homeassistant:
+  packages: !include_dir_named packages
+```
 
 Then add this Lovelace resource as a JavaScript module:
 
