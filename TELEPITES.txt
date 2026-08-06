@@ -1,4 +1,4 @@
-GARDEN MAP CARD v130 – TELJES FORDÍTÁS ÉS TÉRKÉPJAVÍTÁSOK
+GARDEN MAP CARD v158 – TELJES ROBOT- ÉS ÖNTÖZÉSVEZÉRLŐ CSOMAG
 
 Ez a verzió a megtartott v128-as felületre épül:
 - külön Robot és Locsolás nézet;
@@ -28,15 +28,21 @@ TELEPÍTÉS
    /config/www/garden-map-card/
 
 2. A Garden Map Card Lovelace-erőforrása legyen:
-   /local/garden-map-card/garden-map-card.js?v=130
+   /local/garden-map-card/garden-map-card.js?v=158
    Típusa: JavaScript-modul
 
 3. A garden-map-card már saját maga, külön belső kártyaként tölti be a
    mellékelt irrigation-map-card.js fájlt. Ehhez nem kell új Lovelace-erőforrás,
    és a külön telepített irrigation-map-card verzióját sem zavarja.
 
-4. A mellékelt irrigation_scheduler.yaml fájllal írd felül a jelenlegi
-   irrigation_scheduler.yaml csomagodat.
+4. A repó packages mappájában található irrigation_scheduler.yaml fájlt
+   másold ide, a jelenlegit felülírva:
+   /config/packages/irrigation_scheduler.yaml
+
+   A configuration.yaml fájlban legyen engedélyezve a packages mappa:
+
+   homeassistant:
+     packages: !include_dir_named packages
 
 5. Indítsd újra egyszer a Home Assistantot. Erre az öt új, zónánkénti
    kézi időzítő létrehozása miatt van szükség.
