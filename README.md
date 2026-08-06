@@ -6,15 +6,21 @@ Home Assistant custom dashboard card combining Anthbot mower mapping and irrigat
 
 v158
 
-## Installation
+## HACS installation
 
-Copy these frontend files from the repository root to:
+1. In HACS, open **Custom repositories**.
+2. Add `https://github.com/Mqbretrofit/garden-map-card`.
+3. Select the **Dashboard** category.
+4. Download **Garden Map Card**.
+5. Add this Lovelace resource as a JavaScript module if HACS does not add it automatically:
 
-`/config/www/garden-map-card/`
+   `/hacsfiles/garden-map-card/garden-map-card.js`
 
-The required files include `garden-map-card.js`, `irrigation-map-card.js`, the renderer, styles, translations and images.
+The frontend card and all required JavaScript, image, style and translation files are installed by HACS.
 
-Copy the scheduler package separately:
+### Irrigation scheduler package
+
+HACS Dashboard repositories cannot install Home Assistant packages outside the frontend directory. Copy this file separately:
 
 `packages/irrigation_scheduler.yaml` → `/config/packages/irrigation_scheduler.yaml`
 
@@ -24,6 +30,14 @@ Your `configuration.yaml` must load the packages directory:
 homeassistant:
   packages: !include_dir_named packages
 ```
+
+Restart Home Assistant after installing or updating the scheduler package.
+
+## Manual installation
+
+Copy the frontend files from `dist/` to:
+
+`/config/www/garden-map-card/`
 
 Then add this Lovelace resource as a JavaScript module:
 
