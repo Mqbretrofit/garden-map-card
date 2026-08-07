@@ -5375,6 +5375,9 @@ function mergeSavedIrrigationItems(configuredItems, savedItems) {
     ...saved.filter((item) => !configuredIds.has(String(item?.id)))
   ];
 }
+function cloneIrrigationItems(items) {
+  return Array.isArray(items) ? items.map((item) => ({ ...item })) : [];
+}
 var GardenMapCard = class extends HTMLElement {
   constructor() {
     super();
@@ -5405,6 +5408,7 @@ var GardenMapCard = class extends HTMLElement {
     this.languageOverride = false;
     this.activeSystem = "robot";
     this.irrigationCard = null;
+    this.yamlIrrigationConfig = null;
     this.irrigationObserver = null;
     this.irrigationCountdownTimer = null;
     this.irrigationEditType = "head";
@@ -5428,11 +5432,20 @@ var GardenMapCard = class extends HTMLElement {
     if (!config?.entity) {
       throw new Error("Garden Map Card requires an entity");
     }
-    this.config = config;
+    const yamlIrrigation = config.irrigation || {};
+    this.yamlIrrigationConfig = {
+      ...yamlIrrigation,
+      heads: cloneIrrigationItems(yamlIrrigation.heads),
+      drip_lines: cloneIrrigationItems(yamlIrrigation.drip_lines || yamlIrrigation.dripLines)
+    };
+    this.config = {
+      ...config,
+      irrigation: config.irrigation ? { ...this.yamlIrrigationConfig } : config.irrigation
+    };
     try {
       const savedIrrigation = JSON.parse(window.localStorage.getItem(`garden-map-irrigation-settings:${config.entity}`) || "null");
       if (savedIrrigation?.heads) {
-        const configuredIrrigation = config.irrigation || {};
+        const configuredIrrigation = this.yamlIrrigationConfig || {};
         this.config = {
           ...config,
           irrigation: {
@@ -6150,6 +6163,19 @@ var GardenMapCard = class extends HTMLElement {
       return;
     }
     card.setConfig({ ...this.config.irrigation, image: this.config.image });
+    card.heads = mergeSavedIrrigationItems(
+      this.yamlIrrigationConfig?.heads,
+      card.heads
+    );
+    card.dripLines = mergeSavedIrrigationItems(
+      this.yamlIrrigationConfig?.drip_lines,
+      card.dripLines
+    );
+    card.config = {
+      ...card.config,
+      heads: card.heads,
+      drip_lines: card.dripLines
+    };
     if (this._hass) card.hass = this._hass;
     host.replaceChildren(card);
     this.irrigationCard = card;
@@ -6344,7 +6370,7 @@ var GardenMapCard = class extends HTMLElement {
       const response = await this._hass.callWS({ type: "frontend/get_user_data", key });
       const settings = response?.value ?? response;
       if (!Array.isArray(settings?.heads)) return;
-      const configuredIrrigation = this.config.irrigation || {};
+      const configuredIrrigation = this.yamlIrrigationConfig || this.config.irrigation || {};
       const mergedSettings = {
         ...settings,
         heads: mergeSavedIrrigationItems(configuredIrrigation.heads, settings.heads),
@@ -6996,8 +7022,14 @@ var GardenMapCard = class extends HTMLElement {
       boundaryColor: this.config.boundary_color || this.config.boundaryColor,
       boundaryWidth: this.config.boundary_width ?? this.config.boundaryWidth,
       charger: this.config.charger,
-      irrigationHeads: this.irrigationCard?.heads || this.config.irrigation?.heads || [],
-      irrigationDripLines: this.irrigationCard?.dripLines || this.config.irrigation?.drip_lines || this.config.irrigation?.dripLines || [],
+      irrigationHeads: mergeSavedIrrigationItems(
+        this.yamlIrrigationConfig?.heads,
+        this.irrigationCard?.heads
+      ),
+      irrigationDripLines: mergeSavedIrrigationItems(
+        this.yamlIrrigationConfig?.drip_lines,
+        this.irrigationCard?.dripLines
+      ),
       irrigationZones: this.irrigationZones(),
       showIrrigationHeads: this.activeSystem === "irrigation" || this.irrigationZones().some((zone) => zone.active),
       irrigationEditMode: Boolean(this.irrigationCard?.editMode),
