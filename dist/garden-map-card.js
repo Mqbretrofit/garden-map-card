@@ -45,6 +45,18 @@ const SWITCH_MAP = {
   customDirection: ["custom_mowing_direction_enabled", "custom mowing direction"],
 };
 
+function mergeSavedIrrigationItems(configuredItems, savedItems) {
+  const configured = Array.isArray(configuredItems) ? configuredItems : [];
+  const saved = Array.isArray(savedItems) ? savedItems : [];
+  const savedById = new Map(saved.map((item) => [String(item?.id), item]));
+  const configuredIds = new Set(configured.map((item) => String(item?.id)));
+
+  return [
+    ...configured.map((item) => ({ ...item, ...(savedById.get(String(item?.id)) || {}) })),
+    ...saved.filter((item) => !configuredIds.has(String(item?.id))),
+  ];
+}
+
 class GardenMapCard extends HTMLElement {
   constructor() {
     super();
@@ -104,9 +116,18 @@ class GardenMapCard extends HTMLElement {
     try {
       const savedIrrigation = JSON.parse(window.localStorage.getItem(`garden-map-irrigation-settings:${config.entity}`) || "null");
       if (savedIrrigation?.heads) {
+        const configuredIrrigation = config.irrigation || {};
         this.config = {
           ...config,
-          irrigation: { ...(config.irrigation || {}), ...savedIrrigation },
+          irrigation: {
+            ...configuredIrrigation,
+            ...savedIrrigation,
+            heads: mergeSavedIrrigationItems(configuredIrrigation.heads, savedIrrigation.heads),
+            drip_lines: mergeSavedIrrigationItems(
+              configuredIrrigation.drip_lines || configuredIrrigation.dripLines,
+              savedIrrigation.drip_lines || savedIrrigation.dripLines,
+            ),
+          },
         };
       }
     } catch (_error) {}
