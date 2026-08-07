@@ -1111,11 +1111,23 @@ class GardenMapCard extends HTMLElement {
       const response = await this._hass.callWS({ type: "frontend/get_user_data", key });
       const settings = response?.value ?? response;
       if (!Array.isArray(settings?.heads)) return;
-      window.localStorage.setItem(key, JSON.stringify(settings));
-      this.config = { ...this.config, irrigation: { ...(this.config.irrigation || {}), ...settings } };
+      const configuredIrrigation = this.config.irrigation || {};
+      const mergedSettings = {
+        ...settings,
+        heads: mergeSavedIrrigationItems(configuredIrrigation.heads, settings.heads),
+        drip_lines: mergeSavedIrrigationItems(
+          configuredIrrigation.drip_lines || configuredIrrigation.dripLines,
+          settings.drip_lines || settings.dripLines,
+        ),
+      };
+      window.localStorage.setItem(key, JSON.stringify(mergedSettings));
+      this.config = {
+        ...this.config,
+        irrigation: { ...configuredIrrigation, ...mergedSettings },
+      };
       if (this.irrigationCard) {
-        this.irrigationCard.heads = settings.heads;
-        this.irrigationCard.dripLines = Array.isArray(settings.drip_lines) ? settings.drip_lines : [];
+        this.irrigationCard.heads = mergedSettings.heads;
+        this.irrigationCard.dripLines = mergedSettings.drip_lines;
         this.syncIrrigationMapElements();
         this.updateIrrigationHeadEditor();
         this.renderer?.setOptions(this.rendererOptions());
