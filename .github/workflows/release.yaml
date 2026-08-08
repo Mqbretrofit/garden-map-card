@@ -10,15 +10,15 @@ permissions:
 
 jobs:
   release:
-    if: contains(github.event.head_commit.message, '[release v159]')
+    if: contains(github.event.head_commit.message, '[release v159.1]')
     runs-on: ubuntu-latest
     steps:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v159" \
+          gh release create "v159.1" \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
-            --title "Garden Map Card v159" \
-            --notes "Fixes missing irrigation heads on desktop and mobile. YAML-defined heads and drip lines now remain authoritative when the embedded irrigation card or saved user settings contain an empty or partial list."
+            --title "Garden Map Card v159.1" \
+            --notes "Automatically selects the available Anthbot map, status, battery, charging, control and zone-mowing entities belonging to the same robot. Switching between the legacy and v2 integration no longer requires rewriting the Garden Map Card YAML."

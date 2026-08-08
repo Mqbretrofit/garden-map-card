@@ -1,4 +1,4 @@
-GARDEN MAP CARD v159 – TELJES ROBOT- ÉS ÖNTÖZÉSVEZÉRLŐ CSOMAG
+GARDEN MAP CARD v159.1 – TELJES ROBOT- ÉS ÖNTÖZÉSVEZÉRLŐ CSOMAG
 
 Ez a verzió a megtartott v128-as felületre épül:
 - külön Robot és Locsolás nézet;
@@ -28,7 +28,7 @@ TELEPÍTÉS
    /config/www/garden-map-card/
 
 2. A Garden Map Card Lovelace-erőforrása legyen:
-   /local/garden-map-card/garden-map-card.js?v=159
+   /local/garden-map-card/garden-map-card.js?v=159.1
    Típusa: JavaScript-modul
 
 3. A garden-map-card már saját maga, külön belső kártyaként tölti be a
