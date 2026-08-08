@@ -10,15 +10,15 @@ permissions:
 
 jobs:
   release:
-    if: contains(github.event.head_commit.message, '[release v158.5]')
+    if: contains(github.event.head_commit.message, '[release v159]')
     runs-on: ubuntu-latest
     steps:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v158.5" \
+          gh release create "v159" \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
-            --title "Garden Map Card v158.5" \
+            --title "Garden Map Card v159" \
             --notes "Fixes missing irrigation heads on desktop and mobile. YAML-defined heads and drip lines now remain authoritative when the embedded irrigation card or saved user settings contain an empty or partial list."

@@ -1,4 +1,4 @@
-// irrigation-map-card.js?v=158
+// irrigation-map-card.js?v=159
 var DEFAULT_ZONES = [
   { id: 1, name: "Zona 1", entity: "switch.ontozovezerlo_zona_1", color: "#38bdf8" },
   { id: 2, name: "Zona 2", entity: "switch.ontozovezerlo_zona_2", color: "#22c55e" },
@@ -5499,7 +5499,8 @@ var GardenMapCard = class extends HTMLElement {
     const previousRobotStatus = this.lastRobotStatus;
     this._hass = hass;
     this.loadSavedIrrigationSettings();
-    this.entity = hass.states[this.config.entity];
+    this.activeMapEntityId = this.resolveActiveMapEntity();
+    this.entity = hass.states[this.activeEntityId()] || hass.states[this.config.entity];
     this.lastIrrigationStatus = hass.states["input_text.irrigation_status"]?.state || "";
     this.lastRobotStatus = this.getRelatedEntity("status")?.state || this.entity?.state || "";
     if (this.irrigationCard) {
@@ -7053,7 +7054,7 @@ var GardenMapCard = class extends HTMLElement {
     }
   }
   async refreshEntities() {
-    if (!this._hass || this.refreshInFlight || !this.config.entity) {
+    if (!this._hass || this.refreshInFlight || !this.activeEntityId()) {
       return;
     }
     this.refreshInFlight = true;
@@ -7074,7 +7075,8 @@ var GardenMapCard = class extends HTMLElement {
     if (!this._hass || !this.config?.entity) {
       return;
     }
-    const latestEntity = this._hass.states[this.config.entity];
+    this.activeMapEntityId = this.resolveActiveMapEntity();
+    const latestEntity = this._hass.states[this.activeEntityId()];
     if (latestEntity) {
       this.entity = latestEntity;
       this.updateRenderer();
@@ -7082,7 +7084,7 @@ var GardenMapCard = class extends HTMLElement {
   }
   refreshEntityIds() {
     return [
-      this.config.entity,
+      this.activeEntityId(),
       this.getRelatedEntity("status")?.entity_id,
       this.getRelatedEntity("battery")?.entity_id,
       this.getRelatedEntity("charging")?.entity_id,
@@ -7095,6 +7097,12 @@ var GardenMapCard = class extends HTMLElement {
     const customAction = this.config.button_actions?.[command] || this.config.buttonActions?.[command];
     if (customAction) {
       await this.callCustomButtonAction(command, customAction);
+      return;
+    }
+    const buttonEntity = this.getControlEntity(command);
+    if (buttonEntity) {
+      await this._hass.callService("button", "press", {}, { entity_id: buttonEntity });
+      this.scheduleRefresh(200);
       return;
     }
     const serviceByCommand = {
@@ -7111,13 +7119,19 @@ var GardenMapCard = class extends HTMLElement {
     }
   }
   async startZone(zone) {
+    const buttonEntity = this.getZoneButtonEntity(zone);
+    if (buttonEntity) {
+      await this._hass.callService("button", "press", {}, { entity_id: buttonEntity });
+      this.scheduleRefresh(200);
+      return;
+    }
     await this.callAnthbotService("start_zone_mow", { zones: String(zone.id ?? zone.name) });
   }
   async callAnthbotService(service, data = {}) {
     try {
       await this._hass.callService("anthbot_genie_plus", service, {
         ...data,
-        entity_id: this.config.entity
+        entity_id: this.activeEntityId()
       });
       this.notify(this.feedback("commandSentWaiting", this.commandLabel(service)));
       this.scheduleRefresh(200);
@@ -7142,7 +7156,7 @@ var GardenMapCard = class extends HTMLElement {
     return this.t(key).replaceAll("{command}", command);
   }
   commandStatusValues() {
-    const entity = this._hass?.states?.[this.config?.entity];
+    const entity = this._hass?.states?.[this.activeEntityId()];
     const attributes = entity?.attributes || {};
     const robotState = attributes.robot_sta;
     return [
@@ -7310,7 +7324,7 @@ var GardenMapCard = class extends HTMLElement {
   async connectCloudQuietly() {
     try {
       await this._hass.callService("anthbot_genie_plus", "connect_cloud", {
-        entity_id: this.config.entity
+        entity_id: this.activeEntityId()
       });
     } catch (error) {
       console.warn("Anthbot cloud connect failed before setting update", error);
@@ -7467,7 +7481,7 @@ var GardenMapCard = class extends HTMLElement {
   }
   getControlEntity(command) {
     const configured = this.config.controls?.[command];
-    if (configured && this._hass.states[configured]) {
+    if (this.isEntityAvailable(configured) && this.belongsToActiveRobot(configured)) {
       return configured;
     }
     const suffixByCommand = {
@@ -7479,7 +7493,7 @@ var GardenMapCard = class extends HTMLElement {
   }
   getZoneButtonEntity(zone) {
     const configured = this.config.zoneButtons?.[zone.id] || this.config.zoneButtons?.[zone.name];
-    if (configured && this._hass.states[configured]) {
+    if (this.isEntityAvailable(configured) && this.belongsToActiveRobot(configured)) {
       return configured;
     }
     const zoneId = zone.id === void 0 || zone.id === null ? null : String(zone.id);
@@ -7490,10 +7504,10 @@ var GardenMapCard = class extends HTMLElement {
         continue;
       }
       const attrs = state.attributes || {};
-      if (attrs.zone_type && zoneId !== null && String(attrs.id) === zoneId) {
+      if (this.isEntityAvailable(entityId) && this.belongsToActiveRobot(entityId) && attrs.zone_type && zoneId !== null && String(attrs.id) === zoneId) {
         return entityId;
       }
-      if (attrs.zone_type && normalizedName && slugify(attrs.name) === normalizedName) {
+      if (this.isEntityAvailable(entityId) && this.belongsToActiveRobot(entityId) && attrs.zone_type && normalizedName && slugify(attrs.name) === normalizedName) {
         return entityId;
       }
     }
@@ -7510,17 +7524,18 @@ var GardenMapCard = class extends HTMLElement {
     ].filter(Boolean);
     for (const suffix of suffixes) {
       for (const candidate of [`button.${base}_${suffix}`, `button.${base}_${suffix}_2`]) {
-        if (this._hass.states[candidate]) {
+        if (this.isEntityAvailable(candidate)) {
           return candidate;
         }
       }
     }
     for (const [entityId, state] of Object.entries(this._hass.states || {})) {
-      if (!entityId.startsWith("button.") || !entityId.includes(base)) {
+      if (!entityId.startsWith("button.") || !entityId.includes(base) || !this.isEntityAvailable(entityId)) {
         continue;
       }
+      const entityName = slugify(entityId.slice("button.".length)).replace(/_\d+$/, "");
       const friendlyName = slugify(state.attributes?.friendly_name);
-      if (normalizedName && friendlyName.includes(normalizedName)) {
+      if (normalizedName && (entityName.includes(normalizedName) || friendlyName.includes(normalizedName))) {
         return entityId;
       }
     }
@@ -7528,7 +7543,7 @@ var GardenMapCard = class extends HTMLElement {
   }
   getRelatedEntity(kind) {
     const configured = this.config.entities?.[kind];
-    if (configured && this._hass.states[configured]) {
+    if (this.isEntityAvailable(configured) && this.belongsToActiveRobot(configured)) {
       return this._hass.states[configured];
     }
     const mapped = ENTITY_MAP[kind];
@@ -7540,14 +7555,14 @@ var GardenMapCard = class extends HTMLElement {
   }
   getNumberEntity(kind) {
     const configured = this.config.numbers?.[kind];
-    if (configured && this._hass.states[configured]) {
+    if (this.isEntityAvailable(configured) && this.belongsToActiveRobot(configured)) {
       return configured;
     }
     return this.findEntity("number", NUMBER_MAP[kind] || []);
   }
   getSwitchEntity(kind) {
     const configured = this.config.switches?.[kind];
-    if (configured && this._hass.states[configured]) {
+    if (this.isEntityAvailable(configured) && this.belongsToActiveRobot(configured)) {
       return configured;
     }
     return this.findEntity("switch", SWITCH_MAP[kind] || []);
@@ -7559,7 +7574,7 @@ var GardenMapCard = class extends HTMLElement {
         `${domain}.${base}_${suffix}`,
         `${domain}.${base}_${suffix}_2`
       ]) {
-        if (this._hass.states[candidate]) {
+        if (this.isEntityAvailable(candidate)) {
           return candidate;
         }
       }
@@ -7570,10 +7585,10 @@ var GardenMapCard = class extends HTMLElement {
         if (!entityId.startsWith(`${domain}.`)) {
           continue;
         }
-        const entitySlug = slugify(entityId.slice(domain.length + 1));
+        const entitySlug = slugify(entityId.slice(domain.length + 1)).replace(/_\d+$/, "");
         const friendlySlug = slugify(state.attributes?.friendly_name);
         const suffixSlug = slugify(suffix);
-        if (entitySlug === wanted || entitySlug.endsWith(`_${suffixSlug}`) || friendlySlug.includes(suffixSlug)) {
+        if (this.isEntityAvailable(entityId) && this.belongsToActiveRobot(entityId) && (entitySlug === wanted || entitySlug.endsWith(`_${suffixSlug}`) || friendlySlug.includes(suffixSlug))) {
           return entityId;
         }
       }
@@ -7581,7 +7596,45 @@ var GardenMapCard = class extends HTMLElement {
     return null;
   }
   entityBase() {
-    return String(this.config.entity || "").replace(/^sensor\./, "").replace(/_map$/, "");
+    return String(this.activeEntityId() || this.config.entity || "").replace(/^sensor\./, "").replace(/_map(?:_\d+)?$/, "");
+  }
+  activeEntityId() {
+    return this.activeMapEntityId || this.config.entity;
+  }
+  isEntityAvailable(entityId) {
+    const entity = entityId && this._hass?.states?.[entityId];
+    return Boolean(entity && String(entity.state).toLowerCase() !== "unavailable");
+  }
+  resolveActiveMapEntity() {
+    if (!this._hass) {
+      return this.config.entity;
+    }
+    if (this.isEntityAvailable(this.config.entity)) {
+      return this.config.entity;
+    }
+    const configuredBase = String(this.config.entity || "").replace(/^sensor\./, "").replace(/_map(?:_\d+)?$/, "");
+    const candidates = Object.keys(this._hass.states).filter((entityId) => {
+      if (!entityId.startsWith("sensor.") || !this.isEntityAvailable(entityId)) {
+        return false;
+      }
+      const name = entityId.slice("sensor.".length);
+      return name === `${configuredBase}_map` || name.startsWith(`${configuredBase}_map_`) && /^\d+$/.test(name.slice(`${configuredBase}_map_`.length));
+    });
+    return candidates.sort((a, b) => a.localeCompare(b, void 0, { numeric: true }))[0] || this.config.entity;
+  }
+  belongsToActiveRobot(entityId) {
+    if (!entityId) {
+      return false;
+    }
+    const slug = String(entityId).replace(/^[^.]+\./, "");
+    const base = this.entityBase();
+    if (slug === base || slug.startsWith(`${base}_`)) {
+      return true;
+    }
+    const mapAttributes = this._hass?.states?.[this.activeEntityId()]?.attributes || {};
+    const attributes = this._hass?.states?.[entityId]?.attributes || {};
+    const serial = mapAttributes.serial_number || mapAttributes.serial || mapAttributes.device_sn;
+    return Boolean(serial && [attributes.serial_number, attributes.serial, attributes.device_sn].includes(serial));
   }
   formatEntity(entity, key = "") {
     if (!entity) {
@@ -7686,5 +7739,5 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "garden-map-card",
   name: "Garden Map Card",
-  description: "K\xF6z\xF6s Anthbot \xE9s locsol\xF3rendszer t\xE9rk\xE9pk\xE1rtya \u2013 v158"
+  description: "K\xF6z\xF6s Anthbot \xE9s locsol\xF3rendszer t\xE9rk\xE9pk\xE1rtya \u2013 v159"
 });
