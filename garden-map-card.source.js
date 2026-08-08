@@ -1979,8 +1979,14 @@ class GardenMapCard extends HTMLElement {
 
     const buttonEntity = this.getControlEntity(command);
     if (buttonEntity) {
-      await this._hass.callService("button", "press", {}, { entity_id: buttonEntity });
-      this.scheduleRefresh(200);
+      const serviceByCommand = {
+        start: "start_full_mow",
+        stop: "stop_mow",
+        dock: "return_to_dock",
+        "outer-edge": "start_outer_edge_mow",
+        "dock-edge": "start_dock_edge_mow",
+      };
+      await this.executeAnthbotButton(buttonEntity, serviceByCommand[command]);
       return;
     }
 
@@ -2001,26 +2007,92 @@ class GardenMapCard extends HTMLElement {
   async startZone(zone) {
     const buttonEntity = this.getZoneButtonEntity(zone);
     if (buttonEntity) {
-      await this._hass.callService("button", "press", {}, { entity_id: buttonEntity });
-      this.scheduleRefresh(200);
+      await this.executeAnthbotButton(
+        buttonEntity,
+        "start_zone_mow",
+        zone?.name || `${this.t("zone")} ${zone?.id || ""}`.trim(),
+      );
       return;
     }
     await this.callAnthbotService("start_zone_mow", { zones: String(zone.id ?? zone.name) });
   }
 
-  async callAnthbotService(service, data = {}) {
+  async executeAnthbotButton(buttonEntity, service, label = this.commandLabel(service)) {
+    if (!service) {
+      await this._hass.callService("button", "press", {}, { entity_id: buttonEntity });
+      this.scheduleRefresh(200);
+      return;
+    }
+    const token = this.beginCommandFeedback(service, label);
     try {
-      await this._hass.callService("anthbot_genie_plus", service, {
+      await this._hass.callService("button", "press", {}, { entity_id: buttonEntity });
+      this.showCommandFeedback(`A felhő elfogadta: ${label}`);
+      this.scheduleRefresh(200);
+      void this.waitForCommandConfirmation(service, label, token);
+    } catch (error) {
+      this.showCommandFeedback(`A felhő elutasította: ${label}`);
+      throw error;
+    }
+  }
+
+  async callAnthbotService(service, data = {}) {
+    const label = this.commandLabel(service);
+    const token = this.beginCommandFeedback(service, label);
+    try {
+      const domain = ["anthbot_map", "anthbot_genie_plus", "anthbot_ha"]
+        .find((candidate) => this._hass?.services?.[candidate]?.[service])
+        || "anthbot_genie_plus";
+      await this._hass.callService(domain, service, {
         ...data,
         entity_id: this.activeEntityId(),
       });
-      this.notify(this.feedback("commandSentWaiting", this.commandLabel(service)));
+      this.showCommandFeedback(`A felhő elfogadta: ${label}`);
       this.scheduleRefresh(200);
-      void this.waitForCommandConfirmation(service);
+      void this.waitForCommandConfirmation(service, label, token);
     } catch (error) {
-      this.notify(this.feedback("commandFailed", this.commandLabel(service)));
+      this.showCommandFeedback(`A felhő elutasította: ${label}`);
       throw error;
     }
+  }
+
+  beginCommandFeedback(service, label) {
+    const token = ++this.commandConfirmationToken;
+    this.pendingCommandFeedback = { service, label, token };
+    this.showCommandFeedback(`Parancs elküldve: ${label}`);
+    return token;
+  }
+
+  showCommandFeedback(message) {
+    const id = "garden-map-anthbot-command-feedback";
+    document.getElementById(id)?.remove();
+    const toast = document.createElement("div");
+    toast.id = id;
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    toast.textContent = String(message || "");
+    Object.assign(toast.style, {
+      position: "fixed",
+      zIndex: "2147483647",
+      top: "70px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      width: "max-content",
+      maxWidth: "calc(100vw - 24px)",
+      boxSizing: "border-box",
+      padding: "9px 14px",
+      border: "1px solid rgba(255,255,255,.45)",
+      borderRadius: "10px",
+      background: "rgba(2,119,189,.92)",
+      color: "#fff",
+      boxShadow: "0 5px 18px rgba(0,0,0,.32)",
+      font: "700 14px sans-serif",
+      textAlign: "center",
+      pointerEvents: "none",
+    });
+    document.body.appendChild(toast);
+    window.setTimeout(() => {
+      if (document.getElementById(id) === toast) toast.remove();
+    }, 8000);
   }
 
   commandLabel(service) {
@@ -2043,43 +2115,61 @@ class GardenMapCard extends HTMLElement {
     const entity = this._hass?.states?.[this.activeEntityId()];
     const attributes = entity?.attributes || {};
     const robotState = attributes.robot_sta;
-    return [
+    const values = [
       this.getRelatedEntity("status")?.state,
       attributes.mower_status,
       attributes.robot_status_raw,
       typeof robotState === "object" ? robotState?.value : robotState,
       entity?.state,
-    ].map((value) => String(value || "").toLowerCase().replace(/[\s_-]+/g, ""));
+    ];
+    for (const [entityId, state] of Object.entries(this._hass?.states || {})) {
+      if (state?.state === "unavailable") continue;
+      if (!(entityId.startsWith("lawn_mower.")
+          || entityId.includes("mower_status")
+          || entityId.includes("robot_status"))) continue;
+      values.push(
+        state.state,
+        state.attributes?.mower_status,
+        state.attributes?.robot_status_raw,
+        state.attributes?.robot_sta?.value,
+      );
+    }
+    return values.map((value) => String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ""));
   }
 
   commandIsConfirmed(service) {
     const expected = ({
-      start_full_mow: ["mowing", "globalmowing", "working", "cutting"],
-      start_zone_mow: ["mowing", "zonemowing", "regionmowing", "working", "cutting"],
-      start_outer_edge_mow: ["mowing", "bordermowing", "edgecutting", "working"],
-      start_dock_edge_mow: ["mowing", "nestmowing", "working"],
-      stop_mow: ["paused", "pause", "standby", "idle"],
-      return_to_dock: ["returning", "backtodock", "docking", "charging", "charge"],
+      start_full_mow: ["mowing", "globalmowing", "working", "cutting", "nyiras", "funyiras"],
+      start_zone_mow: ["mowing", "zonemowing", "regionmowing", "working", "cutting", "nyiras", "funyiras", "zonanyiras"],
+      start_outer_edge_mow: ["mowing", "bordermowing", "edgecutting", "working", "szegelynyiras"],
+      start_dock_edge_mow: ["mowing", "nestmowing", "working", "tolto", "kornyekeneknyirasa"],
+      stop_mow: ["paused", "pause", "standby", "idle", "charging", "charge", "docked", "szunetel", "keszenlet", "toltes", "dokkolva"],
+      return_to_dock: ["returning", "backtodock", "returntodock", "docking", "charging", "charge", "docked", "visszaatoltore", "toltes", "dokkolva"],
     })[service];
     return Array.isArray(expected) && this.commandStatusValues().some((status) =>
       expected.some((value) => status.includes(value)),
     );
   }
 
-  async waitForCommandConfirmation(service) {
+  async waitForCommandConfirmation(service, label = this.commandLabel(service), token = this.commandConfirmationToken) {
     if (service === "connect_cloud") return;
-    const token = ++this.commandConfirmationToken;
     const deadline = Date.now() + 20000;
     while (token === this.commandConfirmationToken && Date.now() < deadline) {
       await new Promise((resolve) => window.setTimeout(resolve, 1000));
       await this.refreshEntities();
       if (this.commandIsConfirmed(service)) {
-        this.notify(this.feedback("commandConfirmed", this.commandLabel(service)));
+        this.showCommandFeedback(`A robot visszaigazolta: ${label}`);
+        this.pendingCommandFeedback = null;
         return;
       }
     }
     if (token === this.commandConfirmationToken) {
-      this.notify(this.feedback("commandNotConfirmed", this.commandLabel(service)));
+      this.showCommandFeedback(`Nem érkezett állapot-visszaigazolás: ${label}`);
+      this.pendingCommandFeedback = null;
     }
   }
 
