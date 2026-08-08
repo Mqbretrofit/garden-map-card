@@ -1,6 +1,6 @@
 ﻿import "./irrigation-map-card.js?v=159.1";
 import { AnthbotMapRenderer } from "./garden-renderer.js?v=157";
-import { LANGUAGES, resolveLanguage, translate } from "./garden-i18n.js?v=130";
+import { LANGUAGES, resolveLanguage, translate } from "./garden-i18n.js?v=132";
 import {
   adjustCalibration,
   cardToYaml,
@@ -360,7 +360,7 @@ class GardenMapCard extends HTMLElement {
         </style>
         <div class="system-switch">
           <button type="button" data-system="robot">🤖 Robot</button>
-          <button type="button" data-system="irrigation">💧 Locsolás</button>
+          <button type="button" data-system="irrigation">💧 ${this.t("irrigationSystem")}</button>
         </div>
         <section class="app-shell">
           <div class="top-menu">
@@ -413,17 +413,17 @@ class GardenMapCard extends HTMLElement {
             <span class="cloud-status" data-role="map-cloud-status">${this.t("cloudChecking")}</span>
           </div>
           <div class="map-overlay command-dock">
-            <div class="zone-strip" data-role="zone-controls"></div>
+            <div class="zone-strip" data-role="garden-zone-controls"></div>
             <div class="mower-controls">
-              <button class="command start" type="button" data-command="start">
+              <button class="command start" type="button" data-garden-command="start">
                 <span class="command-icon">${this.t("start")}</span>
                 <span>${this.t("startLabel")}</span>
               </button>
-              <button class="command stop" type="button" data-command="stop">
+              <button class="command stop" type="button" data-garden-command="stop">
                 <span class="command-icon">${this.t("stop")}</span>
                 <span>${this.t("stopLabel")}</span>
               </button>
-              <button class="command dock" type="button" data-command="dock">
+              <button class="command dock" type="button" data-garden-command="dock">
                 <span class="command-icon">${this.t("home")}</span>
                 <span>${this.t("homeLabel")}</span>
               </button>
@@ -439,58 +439,58 @@ class GardenMapCard extends HTMLElement {
         </section>
         <section class="irrigation-host"></section>
         <details class="robot-log-box">
-          <summary>Robotnapló</summary>
+          <summary>${this.t("robotLog")}</summary>
           <div class="irrigation-log-content" data-role="robot-log-content">
-            <div class="irrigation-log-empty">Nyisd le a napló betöltéséhez.</div>
+            <div class="irrigation-log-empty">${this.t("openLogHint")}</div>
           </div>
         </details>
         <details class="irrigation-log-box">
-          <summary>Öntözési napló</summary>
+          <summary>${this.t("irrigationLog")}</summary>
           <div class="irrigation-log-content" data-role="irrigation-log-content">
-            <div class="irrigation-log-empty">Nyisd le a napló betöltéséhez.</div>
+            <div class="irrigation-log-empty">${this.t("openLogHint")}</div>
           </div>
         </details>
         <details class="irrigation-head-editor">
-          <summary>Öntözőelemek kijelölése</summary>
+          <summary>${this.t("irrigationElements")}</summary>
           <div class="head-editor-content">
-            <button type="button" data-irrigation-head-edit>Elemek jelölése</button>
+            <button type="button" data-irrigation-head-edit>${this.t("markElements")}</button>
             <div class="head-editor-types">
-              <button type="button" data-irrigation-edit-type="head">Locsolófej</button>
-              <button type="button" data-irrigation-edit-type="drip">Csepegtető</button>
+              <button type="button" data-irrigation-edit-type="head">${this.t("sprinklerHead")}</button>
+              <button type="button" data-irrigation-edit-type="drip">${this.t("dripLine")}</button>
             </div>
             <div class="head-editor-zones">
-              ${(this.config.irrigation?.zones || []).map((zone) => `<button type="button" data-irrigation-edit-zone="${Number(zone.id)}">${zone.name || `Zóna ${zone.id}`}</button>`).join("")}
+              ${(this.config.irrigation?.zones || []).map((zone) => `<button type="button" data-irrigation-edit-zone="${Number(zone.id)}">${zone.name || `${this.t("zone")} ${zone.id}`}</button>`).join("")}
             </div>
             <div class="head-spray-editor" data-role="head-spray-editor" hidden>
               <div class="head-spray-selection">
-                <strong data-selected-head-label>Válassz egy locsolófejet a térképen</strong>
+                <strong data-selected-head-label>${this.t("selectSprinkler")}</strong>
                 <div class="head-spray-actions">
-                  <button type="button" data-save-irrigation-heads>Mentés</button>
-                  <button type="button" data-delete-selected-head>Törlés</button>
+                  <button type="button" data-save-irrigation-heads>${this.t("save")}</button>
+                  <button type="button" data-delete-selected-head>${this.t("delete")}</button>
                 </div>
               </div>
               <label>
-                <span>Irány</span>
+                <span>${this.t("heading")}</span>
                 <input type="range" min="0" max="359" step="1" data-head-setting="direction_angle">
                 <span class="head-spray-value" data-head-value="direction_angle"></span>
               </label>
               <label>
-                <span>Locsolási szög</span>
+                <span>${this.t("sprayAngle")}</span>
                 <input type="range" min="30" max="360" step="5" data-head-setting="sweep_angle">
                 <span class="head-spray-value" data-head-value="sweep_angle"></span>
               </label>
               <label>
-                <span>Pásztázási sebesség</span>
+                <span>${this.t("sweepSpeed")}</span>
                 <input type="range" min="0.2" max="3" step="0.1" data-head-setting="sweep_speed">
                 <span class="head-spray-value" data-head-value="sweep_speed"></span>
               </label>
               <label>
-                <span>Locsolási távolság</span>
+                <span>${this.t("sprayDistance")}</span>
                 <input type="range" min="1" max="15" step="0.5" data-head-setting="spray_distance">
                 <span class="head-spray-value" data-head-value="spray_distance"></span>
               </label>
             </div>
-            <div data-role="irrigation-edit-hint">Válassz zónát és elemtípust.</div>
+            <div data-role="irrigation-edit-hint">${this.t("selectZoneAndType")}</div>
           </div>
         </details>
         <details class="calibration">
@@ -558,8 +558,8 @@ class GardenMapCard extends HTMLElement {
     root.querySelectorAll("button[data-action]").forEach((button) => {
       button.addEventListener("click", () => this.handleAction(button.dataset.action));
     });
-    root.querySelectorAll("button[data-command]").forEach((button) => {
-      button.addEventListener("click", () => this.handleCommand(button.dataset.command));
+    root.querySelectorAll("button[data-garden-command]").forEach((button) => {
+      button.addEventListener("click", () => this.handleCommand(button.dataset.gardenCommand));
     });
     root.querySelectorAll("button[data-panel]").forEach((button) => {
       button.addEventListener("click", () => this.setPanel(button.dataset.panel));
@@ -728,14 +728,14 @@ class GardenMapCard extends HTMLElement {
     const maximumDate = this.localDateKey(new Date());
     let body = "";
     if (this.irrigationLogLoading) {
-      body = '<div class="irrigation-log-empty">Napló betöltése…</div>';
+      body = `<div class="irrigation-log-empty">${this.t("logLoading")}</div>`;
     } else if (this.irrigationLogError) {
-      body = `<div class="irrigation-log-empty">A napló nem tölthető be: ${this.escapeHtml(this.irrigationLogError)}</div>`;
+      body = `<div class="irrigation-log-empty">${this.escapeHtml(this.t("logLoadFailed").replace("{error}", this.irrigationLogError))}</div>`;
     } else if (!this.irrigationLogEntries.length) {
-      body = '<div class="irrigation-log-empty">Ezen a napon nincs öntözési bejegyzés.</div>';
+      body = `<div class="irrigation-log-empty">${this.t("noIrrigationLog")}</div>`;
     } else {
       body = `<div class="irrigation-log-list">${this.irrigationLogEntries.map((entry) => {
-        const time = new Date(entry.time).toLocaleString("hu-HU", {
+        const time = new Date(entry.time).toLocaleString(this.language, {
           month: "2-digit",
           day: "2-digit",
           hour: "2-digit",
@@ -751,8 +751,8 @@ class GardenMapCard extends HTMLElement {
     }
     content.innerHTML = `
       <div class="irrigation-log-toolbar">
-        <input class="irrigation-log-date" type="date" value="${this.escapeHtml(this.irrigationLogDate)}" max="${maximumDate}" aria-label="Napló dátuma">
-        <button type="button" class="irrigation-log-refresh">Frissítés</button>
+        <input class="irrigation-log-date" type="date" value="${this.escapeHtml(this.irrigationLogDate)}" max="${maximumDate}" aria-label="${this.t("logDate")}">
+        <button type="button" class="irrigation-log-refresh">${this.t("refresh")}</button>
       </div>
       ${body}`;
     content.querySelector(".irrigation-log-date")?.addEventListener("change", (event) => {
@@ -774,7 +774,7 @@ class GardenMapCard extends HTMLElement {
     const errorEntity = this.getRelatedEntity("errorDescription")?.entity_id;
     const entityIds = [...new Set([statusEntity, errorEntity].filter(Boolean))];
     if (!entityIds.length) {
-      this.robotLogError = "Nem található robotállapot-entitás.";
+      this.robotLogError = this.t("robotStatusMissing");
       this.renderRobotLog();
       return;
     }
@@ -806,7 +806,7 @@ class GardenMapCard extends HTMLElement {
           const isErrorEntity = entityId === errorEntity;
           if (isErrorEntity && this.robotLogErrorIsEmpty(state)) return null;
           return {
-            state: isErrorEntity ? `Hiba: ${state}` : this.robotLogStatusLabel(state),
+            state: isErrorEntity ? this.t("errorPrefix").replace("{error}", state) : this.robotLogStatusLabel(state),
             rawState: state,
             time: changedAt.toISOString(),
             type: isErrorEntity ? "error" : this.robotLogStatusType(state),
@@ -833,22 +833,12 @@ class GardenMapCard extends HTMLElement {
   robotLogStatusLabel(state) {
     const value = slugify(state);
     const labels = {
-      mowing: "Fűnyírás folyamatban",
-      cutting: "Fűnyírás folyamatban",
-      working: "Fűnyírás folyamatban",
-      paused: "Fűnyírás szüneteltetve",
-      pause: "Fűnyírás szüneteltetve",
-      returning: "Visszatérés a töltőhöz",
-      returning_to_dock: "Visszatérés a töltőhöz",
-      going_home: "Visszatérés a töltőhöz",
-      charging: "Töltés folyamatban",
-      docked: "A robot a töltőn van",
-      idle: "A robot várakozik",
-      standby: "A robot készenlétben van",
-      stopped: "A robot leállt",
-      error: "A robot hibával leállt",
-      offline: "A robot kapcsolata megszakadt",
-      disconnected: "A robot kapcsolata megszakadt",
+      mowing: this.t("statusMowing"), cutting: this.t("statusMowing"), working: this.t("statusMowing"),
+      paused: this.t("statusPaused"), pause: this.t("statusPaused"),
+      returning: this.t("statusReturning"), returning_to_dock: this.t("statusReturning"), going_home: this.t("statusReturning"),
+      charging: this.t("statusCharging"), docked: this.t("statusDocked"), idle: this.t("statusIdle"),
+      standby: this.t("statusStandby"), stopped: this.t("statusStopped"), error: this.t("statusError"),
+      offline: this.t("statusOffline"), disconnected: this.t("statusOffline"),
     };
     return labels[value] || String(state).replaceAll("_", " ");
   }
@@ -867,14 +857,14 @@ class GardenMapCard extends HTMLElement {
     const maximumDate = this.localDateKey(new Date());
     let body = "";
     if (this.robotLogLoading) {
-      body = '<div class="irrigation-log-empty">Robotnapló betöltése…</div>';
+      body = `<div class="irrigation-log-empty">${this.t("robotLogLoading")}</div>`;
     } else if (this.robotLogError) {
-      body = `<div class="irrigation-log-empty">A robotnapló nem tölthető be: ${this.escapeHtml(this.robotLogError)}</div>`;
+      body = `<div class="irrigation-log-empty">${this.escapeHtml(this.t("robotLogLoadFailed").replace("{error}", this.robotLogError))}</div>`;
     } else if (!this.robotLogEntries.length) {
-      body = '<div class="irrigation-log-empty">Ezen a napon nincs robotállapot-változás.</div>';
+      body = `<div class="irrigation-log-empty">${this.t("noRobotLog")}</div>`;
     } else {
       body = `<div class="irrigation-log-list">${this.robotLogEntries.map((entry) => {
-        const time = new Date(entry.time).toLocaleString("hu-HU", {
+        const time = new Date(entry.time).toLocaleString(this.language, {
           month: "2-digit",
           day: "2-digit",
           hour: "2-digit",
@@ -890,8 +880,8 @@ class GardenMapCard extends HTMLElement {
     }
     content.innerHTML = `
       <div class="irrigation-log-toolbar">
-        <input class="irrigation-log-date" type="date" value="${this.escapeHtml(this.robotLogDate)}" max="${maximumDate}" aria-label="Robotnapló dátuma">
-        <button type="button" class="irrigation-log-refresh">Frissítés</button>
+        <input class="irrigation-log-date" type="date" value="${this.escapeHtml(this.robotLogDate)}" max="${maximumDate}" aria-label="${this.t("robotLogDate")}">
+        <button type="button" class="irrigation-log-refresh">${this.t("refresh")}</button>
       </div>
       ${body}`;
     content.querySelector(".irrigation-log-date")?.addEventListener("change", (event) => {
@@ -917,7 +907,7 @@ class GardenMapCard extends HTMLElement {
     if (!host || !this.config.irrigation) return;
     const card = document.createElement("irrigation-map-card");
     if (typeof card.setConfig !== "function") {
-      host.innerHTML = '<div style="padding:16px;color:var(--error-color)">Az irrigation-map-card erőforrás nincs betöltve.</div>';
+      host.innerHTML = `<div style="padding:16px;color:var(--error-color)">${this.t("irrigationResourceMissing")}</div>`;
       return;
     }
     card.setConfig({ ...this.config.irrigation, image: this.config.image });
@@ -1033,7 +1023,7 @@ class GardenMapCard extends HTMLElement {
     const activeZone = Number(this.irrigationCard?.activeZone || 1);
     const toggle = this.shadowRoot?.querySelector("[data-irrigation-head-edit]");
     if (toggle) {
-      toggle.textContent = editing ? "Jelölés kész" : "Elemek jelölése";
+      toggle.textContent = editing ? this.t("markingDone") : this.t("markElements");
       toggle.classList.toggle("active", editing);
     }
     this.shadowRoot?.querySelectorAll("[data-irrigation-edit-zone]").forEach((button) => {
@@ -1045,13 +1035,13 @@ class GardenMapCard extends HTMLElement {
     const hint = this.shadowRoot?.querySelector('[data-role="irrigation-edit-hint"]');
     if (hint) {
       if (!editing) {
-        hint.textContent = "Kapcsold be a jelölést, majd válassz zónát és elemtípust.";
+        hint.textContent = this.t("enableMarkingHint");
       } else if (this.irrigationEditType === "drip") {
         hint.textContent = this.pendingDripStart
-          ? "Most kattints a csepegtető végpontjára."
-          : "Kattints a csepegtető kezdőpontjára, majd a végpontjára. Meglévő vonalra kattintva törölheted.";
+          ? this.t("dripEndHint")
+          : this.t("dripStartHint");
       } else {
-        hint.textContent = "Kattints egy meglévő locsolófejre a beállításához, vagy üres helyre új fej hozzáadásához.";
+        hint.textContent = this.t("sprinklerEditHint");
       }
     }
     const heads = Array.isArray(this.irrigationCard?.heads) ? this.irrigationCard.heads : [];
@@ -1068,7 +1058,7 @@ class GardenMapCard extends HTMLElement {
     const head = heads.find((item) => Number(item.id) === Number(this.selectedIrrigationHeadId));
     if (!head) return;
     const selectedLabel = this.shadowRoot?.querySelector("[data-selected-head-label]");
-    if (selectedLabel) selectedLabel.textContent = `${head.name || `${head.id}. fej`} · ${Number(head.zone)}. zóna`;
+    if (selectedLabel) selectedLabel.textContent = `${head.name || this.t("headLabel").replace("{id}", head.id)} · ${this.t("zoneLabel").replace("{id}", Number(head.zone))}`;
     const fallbackDirection = ((Math.atan2(.5 - Number(head.y), .5 - Number(head.x)) * 180 / Math.PI) + 360) % 360;
     const values = {
       direction_angle: Number.isFinite(Number(head.direction_angle)) ? Number(head.direction_angle) : Math.round(fallbackDirection),
@@ -1108,7 +1098,7 @@ class GardenMapCard extends HTMLElement {
     this.syncIrrigationMapElements();
     this.updateIrrigationHeadEditor();
     this.renderer?.setOptions(this.rendererOptions());
-    this.notify("Locsolófej törölve.");
+    this.notify(this.t("sprinklerDeleted"));
   }
 
   irrigationSettingsKey() {
@@ -1127,9 +1117,9 @@ class GardenMapCard extends HTMLElement {
     window.localStorage.setItem(this.irrigationSettingsKey(), JSON.stringify(settings));
     try {
       await this._hass?.callWS({ type: "frontend/set_user_data", key: this.irrigationSettingsKey(), value: settings });
-      this.notify("A locsolófejek beállításai elmentve.");
+      this.notify(this.t("sprinklerSaved"));
     } catch (_error) {
-      this.notify("A beállítás ezen az eszközön elmentve.");
+      this.notify(this.t("settingsSavedOnDevice"));
     }
   }
 
@@ -1240,7 +1230,7 @@ class GardenMapCard extends HTMLElement {
     }
 
     badge.style.setProperty("--zone-color", activeZone.color || "#38bdf8");
-    text.textContent = `${activeZone.name || `Zóna ${activeZone.id}`} · ${remaining}`;
+    text.textContent = `${activeZone.name || `${this.t("zone")} ${activeZone.id}`} · ${remaining}`;
     badge.dataset.visible = "true";
   }
 
@@ -1270,11 +1260,11 @@ class GardenMapCard extends HTMLElement {
           dripLines.splice(hit, 1);
           dripLines.forEach((line, index) => {
             line.id = index + 1;
-            line.name = `Csepegtető ${index + 1}`;
+            line.name = `${this.t("dripLine")} ${index + 1}`;
           });
           this.syncIrrigationMapElements();
           this.renderer.setOptions(this.rendererOptions());
-          this.notify("Csepegtető törölve.");
+          this.notify(this.t("dripDeleted"));
           return;
         }
         this.pendingDripStart = {
@@ -1291,12 +1281,12 @@ class GardenMapCard extends HTMLElement {
         y: Number(point.y.toFixed(4)),
       };
       if (Math.hypot(end.x - this.pendingDripStart.x, end.y - this.pendingDripStart.y) < 0.015) {
-        this.notify("A csepegtető legyen hosszabb; jelöld távolabb a végpontot.");
+        this.notify(this.t("dripTooShort"));
         return;
       }
       dripLines.push({
         id: dripLines.length + 1,
-        name: `Csepegtető ${dripLines.length + 1}`,
+        name: `${this.t("dripLine")} ${dripLines.length + 1}`,
         zone: Number(irrigation.activeZone || 1),
         x1: this.pendingDripStart.x,
         y1: this.pendingDripStart.y,
@@ -1308,7 +1298,7 @@ class GardenMapCard extends HTMLElement {
       this.syncIrrigationMapElements();
       this.updateIrrigationHeadEditor();
       this.renderer.setOptions(this.rendererOptions());
-      this.notify("Csepegtető hozzáadva.");
+      this.notify(this.t("dripAdded"));
       return;
     }
 
@@ -1583,7 +1573,7 @@ class GardenMapCard extends HTMLElement {
     for (const zone of this.currentZones()) {
       const tile = document.createElement("button");
       tile.type = "button";
-      tile.className = "panel-tile zone-tile";
+      tile.className = "panel-tile garden-zone-tile";
       tile.innerHTML = `<strong>${zone.name || `${this.t("zone")} ${zone.id}`}</strong><span>${this.t("zoneStart")}</span>`;
       tile.addEventListener("click", () => this.startZone(zone));
       grid.appendChild(tile);
@@ -1692,7 +1682,7 @@ class GardenMapCard extends HTMLElement {
   createCommandTile(title, subtitle, command) {
     const tile = document.createElement("button");
     tile.type = "button";
-    tile.className = `panel-tile command-tile ${command}`;
+    tile.className = `panel-tile garden-command-tile ${command}`;
     tile.innerHTML = `<strong>${title}</strong><span>${subtitle}</span>`;
     tile.addEventListener("click", () => this.handleCommand(command));
     return tile;
@@ -1827,7 +1817,7 @@ class GardenMapCard extends HTMLElement {
   }
 
   renderZoneControls(areaDefinition = {}) {
-    const container = this.shadowRoot.querySelector('[data-role="zone-controls"]');
+    const container = this.shadowRoot.querySelector('[data-role="garden-zone-controls"]');
     if (!container) {
       return;
     }
@@ -2026,11 +2016,11 @@ class GardenMapCard extends HTMLElement {
     const token = this.beginCommandFeedback(service, label);
     try {
       await this._hass.callService("button", "press", {}, { entity_id: buttonEntity });
-      this.showCommandFeedback(`A felhő elfogadta: ${label}`);
+      this.showCommandFeedback(this.feedback("commandCloudAccepted", label));
       this.scheduleRefresh(200);
       void this.waitForCommandConfirmation(service, label, token);
     } catch (error) {
-      this.showCommandFeedback(`A felhő elutasította: ${label}`);
+      this.showCommandFeedback(this.feedback("commandCloudRejected", label));
       throw error;
     }
   }
@@ -2046,11 +2036,11 @@ class GardenMapCard extends HTMLElement {
         ...data,
         entity_id: this.activeEntityId(),
       });
-      this.showCommandFeedback(`A felhő elfogadta: ${label}`);
+      this.showCommandFeedback(this.feedback("commandCloudAccepted", label));
       this.scheduleRefresh(200);
       void this.waitForCommandConfirmation(service, label, token);
     } catch (error) {
-      this.showCommandFeedback(`A felhő elutasította: ${label}`);
+      this.showCommandFeedback(this.feedback("commandCloudRejected", label));
       throw error;
     }
   }
@@ -2058,7 +2048,7 @@ class GardenMapCard extends HTMLElement {
   beginCommandFeedback(service, label) {
     const token = ++this.commandConfirmationToken;
     this.pendingCommandFeedback = { service, label, token };
-    this.showCommandFeedback(`Parancs elküldve: ${label}`);
+    this.showCommandFeedback(this.feedback("commandSentWaiting", label));
     return token;
   }
 
@@ -2162,13 +2152,13 @@ class GardenMapCard extends HTMLElement {
       await new Promise((resolve) => window.setTimeout(resolve, 1000));
       await this.refreshEntities();
       if (this.commandIsConfirmed(service)) {
-        this.showCommandFeedback(`A robot visszaigazolta: ${label}`);
+        this.showCommandFeedback(this.feedback("commandConfirmed", label));
         this.pendingCommandFeedback = null;
         return;
       }
     }
     if (token === this.commandConfirmationToken) {
-      this.showCommandFeedback(`Nem érkezett állapot-visszaigazolás: ${label}`);
+      this.showCommandFeedback(this.feedback("commandNotConfirmed", label));
       this.pendingCommandFeedback = null;
     }
   }

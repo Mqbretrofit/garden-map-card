@@ -488,17 +488,17 @@ button.panel-tile {
   font-size: 12px;
 }
 
-.command-tile.start {
+.garden-command-tile.start {
   background: linear-gradient(180deg, rgba(52, 199, 89, 0.92), rgba(36, 138, 70, 0.92));
   color: var(--text-primary-color, #ffffff);
 }
 
-.command-tile.stop {
+.garden-command-tile.stop {
   background: linear-gradient(180deg, rgba(255, 82, 82, 0.92), rgba(189, 36, 36, 0.92));
   color: var(--text-primary-color, #ffffff);
 }
 
-.command-tile.dock {
+.garden-command-tile.dock {
   background: linear-gradient(180deg, rgba(3, 169, 244, 0.92), rgba(2, 119, 189, 0.92));
   color: var(--text-primary-color, #ffffff);
 }

@@ -163,6 +163,32 @@ const feedbackTranslations = {
   km: { cloudChecking:"☁ ក្លោដ៖ កំពុងពិនិត្យ…", cloudDisconnected:"☁ ក្លោដ៖ មិនបានភ្ជាប់", cloudRobotOnline:"☁ ក្លោដ៖ សកម្ម · រ៉ូបូត៖ អនឡាញ", cloudRobotNoResponse:"☁ ក្លោដ៖ សកម្ម · រ៉ូបូតមិនឆ្លើយតប", commandSentWaiting:"{command}៖ បានផ្ញើពាក្យបញ្ជា កំពុងរង់ចាំការបញ្ជាក់។", commandConfirmed:"{command}៖ រ៉ូបូតបានបញ្ជាក់។", commandNotConfirmed:"{command}៖ ក្លោដបានទទួល ប៉ុន្តែរ៉ូបូតមិនបានបញ្ជាក់។", commandFailed:"ប្រតិបត្តិការបរាជ័យ៖ {command}" },
 };
 
+const commandStageTranslations = {
+  en: { commandCloudAccepted:"Cloud accepted: {command}", commandCloudRejected:"Cloud rejected: {command}" },
+  hu: { commandCloudAccepted:"A felhő elfogadta: {command}", commandCloudRejected:"A felhő elutasította: {command}" },
+  de: { commandCloudAccepted:"Von der Cloud akzeptiert: {command}", commandCloudRejected:"Von der Cloud abgelehnt: {command}" },
+  fr: { commandCloudAccepted:"Acceptée par le cloud : {command}", commandCloudRejected:"Rejetée par le cloud : {command}" },
+  es: { commandCloudAccepted:"Aceptado por la nube: {command}", commandCloudRejected:"Rechazado por la nube: {command}" },
+  it: { commandCloudAccepted:"Accettato dal cloud: {command}", commandCloudRejected:"Rifiutato dal cloud: {command}" },
+  pt: { commandCloudAccepted:"Aceite pela nuvem: {command}", commandCloudRejected:"Rejeitado pela nuvem: {command}" },
+  nl: { commandCloudAccepted:"Geaccepteerd door de cloud: {command}", commandCloudRejected:"Geweigerd door de cloud: {command}" },
+  pl: { commandCloudAccepted:"Zaakceptowane przez chmurę: {command}", commandCloudRejected:"Odrzucone przez chmurę: {command}" },
+  cs: { commandCloudAccepted:"Přijato cloudem: {command}", commandCloudRejected:"Odmítnuto cloudem: {command}" },
+  sk: { commandCloudAccepted:"Prijaté cloudom: {command}", commandCloudRejected:"Odmietnuté cloudom: {command}" },
+  ro: { commandCloudAccepted:"Acceptată de cloud: {command}", commandCloudRejected:"Respinsă de cloud: {command}" },
+  da: { commandCloudAccepted:"Accepteret af cloud: {command}", commandCloudRejected:"Afvist af cloud: {command}" },
+  sv: { commandCloudAccepted:"Accepterat av molnet: {command}", commandCloudRejected:"Avvisat av molnet: {command}" },
+  no: { commandCloudAccepted:"Godtatt av skyen: {command}", commandCloudRejected:"Avvist av skyen: {command}" },
+  fi: { commandCloudAccepted:"Pilvi hyväksyi: {command}", commandCloudRejected:"Pilvi hylkäsi: {command}" },
+  "zh-CN": { commandCloudAccepted:"云端已接受：{command}", commandCloudRejected:"云端已拒绝：{command}" },
+  "zh-TW": { commandCloudAccepted:"雲端已接受：{command}", commandCloudRejected:"雲端已拒絕：{command}" },
+  tr: { commandCloudAccepted:"Bulut kabul etti: {command}", commandCloudRejected:"Bulut reddetti: {command}" },
+  th: { commandCloudAccepted:"คลาวด์ยอมรับแล้ว: {command}", commandCloudRejected:"คลาวด์ปฏิเสธ: {command}" },
+  vi: { commandCloudAccepted:"Đám mây đã chấp nhận: {command}", commandCloudRejected:"Đám mây đã từ chối: {command}" },
+  ko: { commandCloudAccepted:"클라우드가 수락했습니다: {command}", commandCloudRejected:"클라우드가 거부했습니다: {command}" },
+  km: { commandCloudAccepted:"ក្លោដបានទទួល៖ {command}", commandCloudRejected:"ក្លោដបានបដិសេធ៖ {command}" },
+};
+
 const commandTranslations = {
   en:{ commandOuterEdge:"Outer edge mowing", commandDockEdge:"Dock surroundings mowing" },
   hu:{ commandOuterEdge:"Külső szegélynyírás", commandDockEdge:"Töltő körüli nyírás" },
@@ -200,6 +226,82 @@ const menuTranslations = {
   ko:{ menu:"메뉴" }, km:{ menu:"ម៉ឺនុយ" },
 };
 
+const gardenUiTranslations = {
+  en: {
+    irrigationSystem:"Irrigation", robotLog:"Robot log", irrigationLog:"Irrigation log",
+    openLogHint:"Expand to load the log.", irrigationElements:"Irrigation elements",
+    markElements:"Mark elements", markingDone:"Finish marking", sprinklerHead:"Sprinkler head",
+    dripLine:"Drip line", selectSprinkler:"Select a sprinkler head on the map",
+    save:"Save", delete:"Delete", sprayAngle:"Spray angle", sweepSpeed:"Sweep speed",
+    sprayDistance:"Spray distance", selectZoneAndType:"Select a zone and an element type.",
+    logLoading:"Loading log…", logLoadFailed:"Could not load the log: {error}",
+    noIrrigationLog:"No irrigation events on this day.", logDate:"Log date", refresh:"Refresh",
+    robotStatusMissing:"Robot status entity not found.", robotLogLoading:"Loading robot log…",
+    robotLogLoadFailed:"Could not load the robot log: {error}",
+    noRobotLog:"No robot status changes on this day.", robotLogDate:"Robot log date",
+    errorPrefix:"Error: {error}", irrigationResourceMissing:"The irrigation-map-card resource is not loaded.",
+    statusMowing:"Mowing in progress", statusPaused:"Mowing paused",
+    statusReturning:"Returning to dock", statusCharging:"Charging",
+    statusDocked:"Robot is docked", statusIdle:"Robot is idle", statusStandby:"Robot is on standby",
+    statusStopped:"Robot stopped", statusError:"Robot stopped with an error",
+    statusOffline:"Robot is offline", enableMarkingHint:"Enable marking, then select a zone and element type.",
+    dripEndHint:"Now click the end point of the drip line.",
+    dripStartHint:"Click the start point, then the end point. Click an existing line to delete it.",
+    sprinklerEditHint:"Click an existing sprinkler head to edit it, or an empty spot to add one.",
+    headLabel:"{id}. head", zoneLabel:"{id}. zone", sprinklerDeleted:"Sprinkler head deleted.",
+    sprinklerSaved:"Sprinkler settings saved.", settingsSavedOnDevice:"Settings saved on this device.",
+    dripDeleted:"Drip line deleted.", dripTooShort:"The drip line must be longer; mark the end point farther away.",
+    dripAdded:"Drip line added.",
+  },
+  hu: {
+    irrigationSystem:"Locsolás", robotLog:"Robotnapló", irrigationLog:"Öntözési napló",
+    openLogHint:"Nyisd le a napló betöltéséhez.", irrigationElements:"Öntözőelemek kijelölése",
+    markElements:"Elemek jelölése", markingDone:"Jelölés kész", sprinklerHead:"Locsolófej",
+    dripLine:"Csepegtető", selectSprinkler:"Válassz egy locsolófejet a térképen",
+    save:"Mentés", delete:"Törlés", sprayAngle:"Locsolási szög", sweepSpeed:"Pásztázási sebesség",
+    sprayDistance:"Locsolási távolság", selectZoneAndType:"Válassz zónát és elemtípust.",
+    logLoading:"Napló betöltése…", logLoadFailed:"A napló nem tölthető be: {error}",
+    noIrrigationLog:"Ezen a napon nincs öntözési bejegyzés.", logDate:"Napló dátuma", refresh:"Frissítés",
+    robotStatusMissing:"Nem található robotállapot-entitás.", robotLogLoading:"Robotnapló betöltése…",
+    robotLogLoadFailed:"A robotnapló nem tölthető be: {error}",
+    noRobotLog:"Ezen a napon nincs robotállapot-változás.", robotLogDate:"Robotnapló dátuma",
+    errorPrefix:"Hiba: {error}", irrigationResourceMissing:"Az irrigation-map-card erőforrás nincs betöltve.",
+    statusMowing:"Fűnyírás folyamatban", statusPaused:"Fűnyírás szüneteltetve",
+    statusReturning:"Visszatérés a töltőhöz", statusCharging:"Töltés folyamatban",
+    statusDocked:"A robot a töltőn van", statusIdle:"A robot várakozik", statusStandby:"A robot készenlétben van",
+    statusStopped:"A robot leállt", statusError:"A robot hibával leállt",
+    statusOffline:"A robot kapcsolata megszakadt", enableMarkingHint:"Kapcsold be a jelölést, majd válassz zónát és elemtípust.",
+    dripEndHint:"Most kattints a csepegtető végpontjára.",
+    dripStartHint:"Kattints a csepegtető kezdőpontjára, majd a végpontjára. Meglévő vonalra kattintva törölheted.",
+    sprinklerEditHint:"Kattints egy meglévő locsolófejre a beállításához, vagy üres helyre új fej hozzáadásához.",
+    headLabel:"{id}. fej", zoneLabel:"{id}. zóna", sprinklerDeleted:"Locsolófej törölve.",
+    sprinklerSaved:"A locsolófejek beállításai elmentve.", settingsSavedOnDevice:"A beállítás ezen az eszközön elmentve.",
+    dripDeleted:"Csepegtető törölve.", dripTooShort:"A csepegtető legyen hosszabb; jelöld távolabb a végpontot.",
+    dripAdded:"Csepegtető hozzáadva.",
+  },
+  de:{ robotLog:"Roboterprotokoll", irrigationLog:"Bewässerungsprotokoll", openLogHint:"Zum Laden des Protokolls aufklappen.", refresh:"Aktualisieren" },
+  fr:{ robotLog:"Journal du robot", irrigationLog:"Journal d’irrigation", openLogHint:"Développez pour charger le journal.", refresh:"Actualiser" },
+  es:{ robotLog:"Registro del robot", irrigationLog:"Registro de riego", openLogHint:"Expanda para cargar el registro.", refresh:"Actualizar" },
+  it:{ robotLog:"Registro del robot", irrigationLog:"Registro irrigazione", openLogHint:"Espandi per caricare il registro.", refresh:"Aggiorna" },
+  pt:{ robotLog:"Registo do robô", irrigationLog:"Registo de irrigação", openLogHint:"Expanda para carregar o registo.", refresh:"Atualizar" },
+  nl:{ robotLog:"Robotlogboek", irrigationLog:"Beregeningslogboek", openLogHint:"Uitklappen om het logboek te laden.", refresh:"Vernieuwen" },
+  pl:{ robotLog:"Dziennik robota", irrigationLog:"Dziennik nawadniania", openLogHint:"Rozwiń, aby wczytać dziennik.", refresh:"Odśwież" },
+  cs:{ robotLog:"Protokol robota", irrigationLog:"Protokol zavlažování", openLogHint:"Rozbalte pro načtení protokolu.", refresh:"Obnovit" },
+  sk:{ robotLog:"Denník robota", irrigationLog:"Denník zavlažovania", openLogHint:"Rozbaľte na načítanie denníka.", refresh:"Obnoviť" },
+  ro:{ robotLog:"Jurnal robot", irrigationLog:"Jurnal irigare", openLogHint:"Extindeți pentru a încărca jurnalul.", refresh:"Reîmprospătare" },
+  da:{ robotLog:"Robotlog", irrigationLog:"Vandingslog", openLogHint:"Udvid for at indlæse loggen.", refresh:"Opdater" },
+  sv:{ robotLog:"Robotlogg", irrigationLog:"Bevattningslogg", openLogHint:"Fäll ut för att läsa in loggen.", refresh:"Uppdatera" },
+  no:{ robotLog:"Robotlogg", irrigationLog:"Vanningslogg", openLogHint:"Utvid for å laste loggen.", refresh:"Oppdater" },
+  fi:{ robotLog:"Robottiloki", irrigationLog:"Kasteluloki", openLogHint:"Laajenna lokin lataamiseksi.", refresh:"Päivitä" },
+  "zh-CN":{ robotLog:"机器人日志", irrigationLog:"灌溉日志", openLogHint:"展开以加载日志。", refresh:"刷新" },
+  "zh-TW":{ robotLog:"機器人日誌", irrigationLog:"灌溉日誌", openLogHint:"展開以載入日誌。", refresh:"重新整理" },
+  tr:{ robotLog:"Robot günlüğü", irrigationLog:"Sulama günlüğü", openLogHint:"Günlüğü yüklemek için genişletin.", refresh:"Yenile" },
+  th:{ robotLog:"บันทึกหุ่นยนต์", irrigationLog:"บันทึกการให้น้ำ", openLogHint:"ขยายเพื่อโหลดบันทึก", refresh:"รีเฟรช" },
+  vi:{ robotLog:"Nhật ký robot", irrigationLog:"Nhật ký tưới", openLogHint:"Mở rộng để tải nhật ký.", refresh:"Làm mới" },
+  ko:{ robotLog:"로봇 로그", irrigationLog:"관개 로그", openLogHint:"로그를 불러오려면 펼치세요.", refresh:"새로 고침" },
+  km:{ robotLog:"កំណត់ហេតុរ៉ូបូត", irrigationLog:"កំណត់ហេតុស្រោចស្រព", openLogHint:"ពង្រីកដើម្បីផ្ទុកកំណត់ហេតុ។", refresh:"ផ្ទុកឡើងវិញ" },
+};
+
 export function normalizeLanguage(value) {
   const raw = String(value || "en").replace("_", "-");
   const lower = raw.toLowerCase();
@@ -215,5 +317,5 @@ export function resolveLanguage(selection, hass) {
 }
 
 export function translate(language, key) {
-  return translations[language]?.[key] ?? feedbackTranslations[language]?.[key] ?? commandTranslations[language]?.[key] ?? menuTranslations[language]?.[key] ?? en[key] ?? feedbackTranslations.en[key] ?? commandTranslations.en[key] ?? menuTranslations.en[key] ?? key;
+  return translations[language]?.[key] ?? feedbackTranslations[language]?.[key] ?? commandStageTranslations[language]?.[key] ?? commandTranslations[language]?.[key] ?? menuTranslations[language]?.[key] ?? gardenUiTranslations[language]?.[key] ?? en[key] ?? feedbackTranslations.en[key] ?? commandStageTranslations.en[key] ?? commandTranslations.en[key] ?? menuTranslations.en[key] ?? gardenUiTranslations.en[key] ?? key;
 }
