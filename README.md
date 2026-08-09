@@ -6,7 +6,7 @@ Home Assistant custom dashboard card combining Anthbot mower mapping and irrigat
 
 ## Current version
 
-v161.4
+v161.5
 
 ## HACS installation
 
