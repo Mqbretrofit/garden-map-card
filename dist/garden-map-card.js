@@ -1,4 +1,4 @@
-// Garden Map Card v161.4 - mobile portrait map fit and irrigation direction fix
+// Garden Map Card v161.3-test2 - rotation-aware portrait map fitting
 var DEFAULT_ZONES = [
   { id: 1, name: "Zona 1", entity: "switch.ontozovezerlo_zona_1", color: "#38bdf8" },
   { id: 2, name: "Zona 2", entity: "switch.ontozovezerlo_zona_2", color: "#22c55e" },
@@ -1918,9 +1918,10 @@ function computeMapFit(size, bounds, view, aspectRatio, fit = "contain") {
   const rotation = Number(view.rotation) || 0;
   const cosine = Math.abs(Math.cos(rotation));
   const sine = Math.abs(Math.sin(rotation));
-  // Preserve the image aspect ratio while fitting its rotated bounding box.
-  // This prevents a 90-degree portrait map from becoming tiny with contain
-  // or heavily cropped with cover.
+  // Preserve the image aspect ratio while fitting its *rotated* bounding box.
+  // The previous implementation fitted the unrotated landscape image first,
+  // so a 90-degree portrait rotation was either tiny (contain) or over-cropped
+  // (cover).
   const rotatedWidthFactor = targetRatio * cosine + sine;
   const rotatedHeightFactor = targetRatio * sine + cosine;
   const scaleX = size.width / Math.max(1e-6, rotatedWidthFactor);
@@ -2247,7 +2248,7 @@ var AnthbotMapRenderer = class {
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Moving water drops make the drip line visibly animated. The
+        // Moving water drops make the drip line visibly animated.  The
         // animated dash alone is too subtle on top of the garden image.
         const dx = end.x - start.x;
         const dy = end.y - start.y;
@@ -7171,6 +7172,9 @@ var GardenMapCard = class extends HTMLElement {
       bounds: this.config.bounds,
       fit: mobileViewport ? this.config.mobile_map_fit || this.config.mobileMapFit || "contain" : this.config.fit || "cover",
       rotation: degreesToRadians2((Number(this.config.rotation) || 0) + mobileRotation),
+      // The map geometry already rotates the irrigation vectors. Portrait
+      // mode needs the additional half-turn used by the last known-good
+      // mobile renderer; without it every sprinkler points 180 degrees away.
       irrigationDirectionRotationCorrection: degreesToRadians2(
         -2 * mobileRotation + (mobileViewport ? 180 : 0)
       ),
