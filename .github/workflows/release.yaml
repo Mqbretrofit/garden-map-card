@@ -10,15 +10,15 @@ permissions:
 
 jobs:
   release:
-    if: contains(github.event.head_commit.message, '[release v161.5]')
+    if: contains(github.event.head_commit.message, '[release v161.6]')
     runs-on: ubuntu-latest
     steps:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v161.5" \
+          gh release create "v161.6" \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
-            --title "Garden Map Card v161.5" \
-            --notes "Publishes the exact user-tested mobile build in both the HACS root bundle and dist bundle. Fixes portrait map sizing, mobile sprinkler directions, and animated drip-line flow."
+            --title "Garden Map Card v161.6" \
+            --notes "Publishes the exact user-tested reconnect build in both the HACS root bundle and dist bundle. Restores map pan and pinch-zoom after returning to the dashboard view and refreshes the renderer on phone orientation changes to prevent image distortion."

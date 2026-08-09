@@ -1,4 +1,4 @@
-// Garden Map Card v161.3-test2 - rotation-aware portrait map fitting
+// Garden Map Card v161.6-test - reconnect renderer and resize handling
 var DEFAULT_ZONES = [
   { id: 1, name: "Zona 1", entity: "switch.ontozovezerlo_zona_1", color: "#38bdf8" },
   { id: 2, name: "Zona 2", entity: "switch.ontozovezerlo_zona_2", color: "#22c55e" },
@@ -5710,6 +5710,18 @@ var GardenMapCard = class extends HTMLElement {
   }
   t(key) {
     return translate(this.language, key);
+  }
+  connectedCallback() {
+    if (!this.config?.entity) return;
+    // Home Assistant may detach and later reuse the same card instance when
+    // navigating between dashboard views. disconnectedCallback() destroys the
+    // renderer and its pointer/resize handlers, so rebuild them on reattach.
+    if (!this.renderer) {
+      this.render();
+    }
+    this.startRefreshTimer();
+    this.startIrrigationCountdownTimer();
+    requestAnimationFrame(() => this.renderer?.resize());
   }
   disconnectedCallback() {
     this.stopRefreshTimer();
