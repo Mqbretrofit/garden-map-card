@@ -1,4 +1,4 @@
-// Garden Map Card v161.2 - animated drip-line water flow
+// Garden Map Card v161.4 - mobile portrait map fit and irrigation direction fix
 var DEFAULT_ZONES = [
   { id: 1, name: "Zona 1", entity: "switch.ontozovezerlo_zona_1", color: "#38bdf8" },
   { id: 2, name: "Zona 2", entity: "switch.ontozovezerlo_zona_2", color: "#22c55e" },
@@ -1915,26 +1915,25 @@ function screenToMap(point, map, calibration) {
 function computeMapFit(size, bounds, view, aspectRatio, fit = "contain") {
   const worldRatio = (bounds.maxX - bounds.minX) / (bounds.maxY - bounds.minY);
   const targetRatio = Number.isFinite(Number(aspectRatio)) && Number(aspectRatio) > 0 ? Number(aspectRatio) : worldRatio;
-  const canvasRatio = size.width / size.height;
-  let width = size.width;
-  let height = size.height;
-  if (fit === "cover") {
-    if (targetRatio > canvasRatio) {
-      width = height * targetRatio;
-    } else {
-      height = width / targetRatio;
-    }
-  } else if (targetRatio > canvasRatio) {
-    height = width / targetRatio;
-  } else {
-    width = height * targetRatio;
-  }
+  const rotation = Number(view.rotation) || 0;
+  const cosine = Math.abs(Math.cos(rotation));
+  const sine = Math.abs(Math.sin(rotation));
+  // Preserve the image aspect ratio while fitting its rotated bounding box.
+  // This prevents a 90-degree portrait map from becoming tiny with contain
+  // or heavily cropped with cover.
+  const rotatedWidthFactor = targetRatio * cosine + sine;
+  const rotatedHeightFactor = targetRatio * sine + cosine;
+  const scaleX = size.width / Math.max(1e-6, rotatedWidthFactor);
+  const scaleY = size.height / Math.max(1e-6, rotatedHeightFactor);
+  const scale = fit === "cover" ? Math.max(scaleX, scaleY) : Math.min(scaleX, scaleY);
+  const width = targetRatio * scale;
+  const height = scale;
   return {
     width: Math.max(1, width * view.zoom),
     height: Math.max(1, height * view.zoom),
     centerX: size.width / 2 + view.panX,
     centerY: size.height / 2 + view.panY,
-    rotation: Number(view.rotation) || 0
+    rotation
   };
 }
 function normalizeCalibration(calibration) {
@@ -7172,7 +7171,9 @@ var GardenMapCard = class extends HTMLElement {
       bounds: this.config.bounds,
       fit: mobileViewport ? this.config.mobile_map_fit || this.config.mobileMapFit || "contain" : this.config.fit || "cover",
       rotation: degreesToRadians2((Number(this.config.rotation) || 0) + mobileRotation),
-      irrigationDirectionRotationCorrection: degreesToRadians2(-2 * mobileRotation),
+      irrigationDirectionRotationCorrection: degreesToRadians2(
+        -2 * mobileRotation + (mobileViewport ? 180 : 0)
+      ),
       calibration: this.calibration,
       robotCalibration: this.robotCalibration,
       decodedBoundaryCalibration: this.decodedBoundaryCalibration,
