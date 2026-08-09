@@ -686,7 +686,7 @@ class IrrigationMapCard extends HTMLElement {
       <div class="program-zone ${zone.enabled ? "enabled" : ""}" data-zone="${zone.id}">
         <label class="zone-check">
           <input type="checkbox" data-field="zone-enabled" ${zone.enabled ? "checked" : ""}>
-          <span class="order-badge">${zone.order}.</span><strong>${escapeHtml(zone.name)}</strong>
+          <span class="order-badge">${zone.id}.</span><span class="zone-name" style="color:#17202a!important;display:inline!important;font-weight:800!important;opacity:1!important;visibility:visible!important;">${escapeHtml(zone.name || `Zóna ${zone.id}`)}</span>
         </label>
         <label class="zone-value">${this.t("time")}
           <input type="number" data-field="zone-minutes" min="1" max="180" step="1" value="${zone.minutes}"><span>${this.t("minutes")}</span>
@@ -1377,9 +1377,10 @@ class IrrigationMapCard extends HTMLElement {
       .day.active { background:#149ec2; color:#fff; font-weight:800; }
       .program-title { font-size:15px; font-weight:800; margin:16px 0 8px; }
       .program-zones { display:grid; gap:8px; }
-      .program-zone { align-items:center; background:#fff; border:1px solid #dbe2e8; border-left:5px solid #94a3b8; border-radius:11px; display:grid; gap:10px; grid-template-columns:minmax(150px,1fr) auto auto; opacity:.62; padding:10px; }
+      .program-zone { align-items:center; background:#fff; border:1px solid #dbe2e8; border-left:5px solid #94a3b8; border-radius:11px; color:#17202a; display:grid; gap:10px; grid-template-columns:minmax(150px,1fr) auto auto; opacity:.62; padding:10px; }
       .program-zone.enabled { border-left-color:#149ec2; opacity:1; }
-      .zone-check { align-items:center; display:flex; gap:8px; }
+      .zone-check { align-items:center; color:#17202a !important; display:flex; gap:8px; }
+      .zone-check .zone-name { color:#17202a !important; display:inline !important; font-weight:800; opacity:1 !important; visibility:visible !important; }
       .order-badge { align-items:center; background:#e0f2fe; border-radius:999px; color:#0369a1; display:inline-flex; font-weight:800; height:30px; justify-content:center; width:30px; }
       .zone-value { align-items:center; display:flex; font-size:12px; gap:5px; }
       .zone-value input { text-align:center; width:68px; }
