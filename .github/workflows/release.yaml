@@ -10,15 +10,15 @@ permissions:
 
 jobs:
   release:
-    if: contains(github.event.head_commit.message, '[release v161.2]')
+    if: contains(github.event.head_commit.message, '[release v161.4]')
     runs-on: ubuntu-latest
     steps:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v161.2" \
+          gh release create "v161.4" \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
-            --title "Garden Map Card v161.2" \
-            --notes "Adds clearly visible animated water droplets to active drip lines, making drip irrigation flow easy to see on the garden map."
+            --title "Garden Map Card v161.4" \
+            --notes "Fixes portrait mobile map sizing by fitting the rotated image bounds correctly, and restores the correct sprinkler direction after mobile rotation. Includes the animated drip-line water flow from v161.2."
