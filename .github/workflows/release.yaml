@@ -10,15 +10,15 @@ permissions:
 
 jobs:
   release:
-    if: contains(github.event.head_commit.message, '[release v161.1]')
+    if: contains(github.event.head_commit.message, '[release v161.2]')
     runs-on: ubuntu-latest
     steps:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v161.1" \
+          gh release create "v161.2" \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
-            --title "Garden Map Card v161.1" \
-            --notes "Fixes irrigation schedule zone identity and visibility: zone numbers remain tied to their actual zones, configured zone names are visible, and matching order values continue to run as parallel irrigation groups."
+            --title "Garden Map Card v161.2" \
+            --notes "Adds clearly visible animated water droplets to active drip lines, making drip irrigation flow easy to see on the garden map."
