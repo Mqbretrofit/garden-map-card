@@ -1,4 +1,4 @@
-// Garden Map Card v161.1 - irrigation schedule zone identity fix
+// Garden Map Card v161.4 - mobile portrait map fit and irrigation direction fix
 var DEFAULT_ZONES = [
   { id: 1, name: "Zona 1", entity: "switch.ontozovezerlo_zona_1", color: "#38bdf8" },
   { id: 2, name: "Zona 2", entity: "switch.ontozovezerlo_zona_2", color: "#22c55e" },
@@ -1915,26 +1915,25 @@ function screenToMap(point, map, calibration) {
 function computeMapFit(size, bounds, view, aspectRatio, fit = "contain") {
   const worldRatio = (bounds.maxX - bounds.minX) / (bounds.maxY - bounds.minY);
   const targetRatio = Number.isFinite(Number(aspectRatio)) && Number(aspectRatio) > 0 ? Number(aspectRatio) : worldRatio;
-  const canvasRatio = size.width / size.height;
-  let width = size.width;
-  let height = size.height;
-  if (fit === "cover") {
-    if (targetRatio > canvasRatio) {
-      width = height * targetRatio;
-    } else {
-      height = width / targetRatio;
-    }
-  } else if (targetRatio > canvasRatio) {
-    height = width / targetRatio;
-  } else {
-    width = height * targetRatio;
-  }
+  const rotation = Number(view.rotation) || 0;
+  const cosine = Math.abs(Math.cos(rotation));
+  const sine = Math.abs(Math.sin(rotation));
+  // Preserve the image aspect ratio while fitting its rotated bounding box.
+  // This prevents a 90-degree portrait map from becoming tiny with contain
+  // or heavily cropped with cover.
+  const rotatedWidthFactor = targetRatio * cosine + sine;
+  const rotatedHeightFactor = targetRatio * sine + cosine;
+  const scaleX = size.width / Math.max(1e-6, rotatedWidthFactor);
+  const scaleY = size.height / Math.max(1e-6, rotatedHeightFactor);
+  const scale = fit === "cover" ? Math.max(scaleX, scaleY) : Math.min(scaleX, scaleY);
+  const width = targetRatio * scale;
+  const height = scale;
   return {
     width: Math.max(1, width * view.zoom),
     height: Math.max(1, height * view.zoom),
     centerX: size.width / 2 + view.panX,
     centerY: size.height / 2 + view.panY,
-    rotation: Number(view.rotation) || 0
+    rotation
   };
 }
 function normalizeCalibration(calibration) {
@@ -2247,6 +2246,33 @@ var AnthbotMapRenderer = class {
         ctx.lineTo(end.x, end.y);
         ctx.stroke();
         ctx.setLineDash([]);
+
+        // Moving water drops make the drip line visibly animated. The
+        // animated dash alone is too subtle on top of the garden image.
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const lineLength = Math.hypot(dx, dy);
+        if (lineLength > 1) {
+          const ux = dx / lineLength;
+          const uy = dy / lineLength;
+          const nx = -uy;
+          const ny = ux;
+          const dropCount = Math.max(4, Math.min(18, Math.round(lineLength / 22)));
+          ctx.fillStyle = colorWithAlpha("#e0f7ff", 0.95);
+          for (let drop = 0; drop < dropCount; drop += 1) {
+            const progress = (phase * 0.34 + drop / dropCount) % 1;
+            const side = drop % 2 === 0 ? -1 : 1;
+            const offset = (1.5 + (drop % 3) * 0.55) * side;
+            const x = start.x + dx * progress + nx * offset;
+            const y = start.y + dy * progress + ny * offset;
+            const alpha = 0.35 + 0.55 * (1 - Math.abs(progress - 0.5) * 1.2);
+            ctx.globalAlpha = Math.max(0.25, Math.min(0.95, alpha));
+            ctx.beginPath();
+            ctx.arc(x, y, 1.8 + (drop % 2) * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+        }
       }
       if (this.options.irrigationEditMode) {
         for (const point of [start, end]) {
@@ -7145,7 +7171,9 @@ var GardenMapCard = class extends HTMLElement {
       bounds: this.config.bounds,
       fit: mobileViewport ? this.config.mobile_map_fit || this.config.mobileMapFit || "contain" : this.config.fit || "cover",
       rotation: degreesToRadians2((Number(this.config.rotation) || 0) + mobileRotation),
-      irrigationDirectionRotationCorrection: degreesToRadians2(-2 * mobileRotation),
+      irrigationDirectionRotationCorrection: degreesToRadians2(
+        -2 * mobileRotation + (mobileViewport ? 180 : 0)
+      ),
       calibration: this.calibration,
       robotCalibration: this.robotCalibration,
       decodedBoundaryCalibration: this.decodedBoundaryCalibration,
