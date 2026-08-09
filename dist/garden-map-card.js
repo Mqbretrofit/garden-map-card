@@ -1,4 +1,4 @@
-// Garden Map Card v161.1 - irrigation schedule zone identity fix
+// Garden Map Card v161.2 - animated drip-line water flow
 var DEFAULT_ZONES = [
   { id: 1, name: "Zona 1", entity: "switch.ontozovezerlo_zona_1", color: "#38bdf8" },
   { id: 2, name: "Zona 2", entity: "switch.ontozovezerlo_zona_2", color: "#22c55e" },
@@ -2247,6 +2247,33 @@ var AnthbotMapRenderer = class {
         ctx.lineTo(end.x, end.y);
         ctx.stroke();
         ctx.setLineDash([]);
+
+        // Moving water drops make the drip line visibly animated. The
+        // animated dash alone is too subtle on top of the garden image.
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const lineLength = Math.hypot(dx, dy);
+        if (lineLength > 1) {
+          const ux = dx / lineLength;
+          const uy = dy / lineLength;
+          const nx = -uy;
+          const ny = ux;
+          const dropCount = Math.max(4, Math.min(18, Math.round(lineLength / 22)));
+          ctx.fillStyle = colorWithAlpha("#e0f7ff", 0.95);
+          for (let drop = 0; drop < dropCount; drop += 1) {
+            const progress = (phase * 0.34 + drop / dropCount) % 1;
+            const side = drop % 2 === 0 ? -1 : 1;
+            const offset = (1.5 + (drop % 3) * 0.55) * side;
+            const x = start.x + dx * progress + nx * offset;
+            const y = start.y + dy * progress + ny * offset;
+            const alpha = 0.35 + 0.55 * (1 - Math.abs(progress - 0.5) * 1.2);
+            ctx.globalAlpha = Math.max(0.25, Math.min(0.95, alpha));
+            ctx.beginPath();
+            ctx.arc(x, y, 1.8 + (drop % 2) * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+        }
       }
       if (this.options.irrigationEditMode) {
         for (const point of [start, end]) {
