@@ -6,7 +6,7 @@ Home Assistant custom dashboard card combining Anthbot mower mapping and irrigat
 
 ## Current version
 
-v161.1
+v161.2
 
 ## HACS installation
 
@@ -43,7 +43,7 @@ Copy the frontend files from `dist/` to:
 
 Then add this Lovelace resource as a JavaScript module:
 
-`/local/garden-map-card/garden-map-card.js?v=161.1`
+`/local/garden-map-card/garden-map-card.js?v=161.2`
 
 See `TELEPITES.txt` and `garden-map-card.yaml` for the complete Hungarian installation and configuration example.
 
