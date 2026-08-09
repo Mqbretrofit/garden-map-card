@@ -10,15 +10,15 @@ permissions:
 
 jobs:
   release:
-    if: contains(github.event.head_commit.message, '[release v161]')
+    if: contains(github.event.head_commit.message, '[release v161.1]')
     runs-on: ubuntu-latest
     steps:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v161" \
+          gh release create "v161.1" \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
-            --title "Garden Map Card v161" \
-            --notes "Completes multilingual three-stage Anthbot command feedback and translates the Robot log and irrigation editor interface. Also isolates Garden Map Card command handling from other Anthbot cards loaded on the same dashboard."
+            --title "Garden Map Card v161.1" \
+            --notes "Fixes irrigation schedule zone identity and visibility: zone numbers remain tied to their actual zones, configured zone names are visible, and matching order values continue to run as parallel irrigation groups."
