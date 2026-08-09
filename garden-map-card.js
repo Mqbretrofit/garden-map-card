@@ -1,4 +1,4 @@
-// Garden Map Card v161.6-test - reconnect renderer and resize handling
+// Garden Map Card v161.7-test - dashboard zone editor and dynamic irrigation zones
 var DEFAULT_ZONES = [
   { id: 1, name: "Zona 1", entity: "switch.ontozovezerlo_zona_1", color: "#38bdf8" },
   { id: 2, name: "Zona 2", entity: "switch.ontozovezerlo_zona_2", color: "#22c55e" },
@@ -17,7 +17,7 @@ var SCHEDULER_ENTITIES = {
   manualRunScript: "script.irrigation_run_zone",
   stopZoneScript: "script.irrigation_stop_zone",
   stopScript: "script.irrigation_stop",
-  manualMinutes: Array.from({ length: 5 }, (_, index) => `input_number.irrigation_manual_zone_${index + 1}_minutes`),
+  manualMinutes: Array.from({ length: 10 }, (_, index) => `input_number.irrigation_manual_zone_${index + 1}_minutes`),
   programs: Array.from({ length: 8 }, (_, index) => `input_text.irrigation_program_${index + 1}`)
 };
 var DEFAULT_PUMP_ENTITIES = {
@@ -384,17 +384,19 @@ var IrrigationMapCard = class extends HTMLElement {
   }
   zones() {
     const configured = Array.isArray(this.config.zones) ? this.config.zones : [];
-    return DEFAULT_ZONES.map((fallback, index) => {
-      const zone = configured.find((item) => Number(item?.id) === fallback.id) || configured[index] || fallback;
-      const entity = String(zone.entity || fallback.entity);
+    const source = configured.length ? configured : DEFAULT_ZONES;
+    return source.slice(0, 10).map((zone, index) => {
+      const id = Number(zone?.id ?? index + 1);
+      const fallback = DEFAULT_ZONES.find((item) => item.id === id) || DEFAULT_ZONES[index] || {};
+      const entity = String(zone?.entity || fallback.entity || "");
       return {
-        id: Number(zone.id ?? index + 1),
-        name: String(zone.name || fallback.name),
+        id,
+        name: String(zone?.name || fallback.name || `${this.t("zone")} ${id}`),
         entity,
-        color: String(zone.color || fallback.color),
+        color: String(zone?.color || fallback.color || "#38bdf8"),
         active: this.hassObj?.states?.[entity]?.state === "on"
       };
-    });
+    }).filter((zone) => Number.isInteger(zone.id) && zone.id >= 1 && zone.id <= 10 && zone.entity);
   }
   readHeads() {
     const source = Array.isArray(this.config.heads) ? this.config.heads : [];
@@ -658,7 +660,7 @@ var IrrigationMapCard = class extends HTMLElement {
     const minutes = await this.saveManualMinutes(zone.id, value);
     await this.hassObj.callService("script", "turn_on", {
       entity_id: SCHEDULER_ENTITIES.manualRunScript,
-      variables: { zone_id: zone.id, minutes }
+      variables: { zone_id: zone.id, zone_entity: zone.entity, zone_name: zone.name, minutes }
     });
     this.notify(`${zone.name} elind\xEDtva ${minutes} percre.`);
   }
@@ -669,7 +671,7 @@ var IrrigationMapCard = class extends HTMLElement {
     }
     await this.hassObj.callService("script", "turn_on", {
       entity_id: SCHEDULER_ENTITIES.stopZoneScript,
-      variables: { zone_id: zone.id }
+      variables: { zone_id: zone.id, zone_entity: zone.entity, zone_name: zone.name }
     });
     this.notify(`${zone.name} le\xE1ll\xEDtva.`);
   }
@@ -922,10 +924,9 @@ var IrrigationMapCard = class extends HTMLElement {
     if (!elements?.length) return;
     const rawStatus = this.hassObj?.states?.[SCHEDULER_ENTITIES.status]?.state;
     const status = rawStatus && !["unknown", "unavailable"].includes(rawStatus) ? rawStatus : this.t("noIrrigation");
-    const zoneById = new Map(this.zones().map((zone) => [Number(zone.id), zone]));
     const activeRows = [];
-    for (let zoneId = 1; zoneId <= 5; zoneId += 1) {
-      const zone = zoneById.get(zoneId);
+    for (const zone of this.zones()) {
+      const zoneId = Number(zone.id);
       const programTimer = this.hassObj?.states?.[`timer.irrigation_program_zone_${zoneId}`];
       const manualTimer = this.hassObj?.states?.[`timer.irrigation_manual_zone_${zoneId}`];
       if (programTimer?.state === "active") {
@@ -1505,7 +1506,7 @@ function decodeProgram(value, slot, availableZones) {
         minutes: clampNumber(item[2], 1, 180, 15),
         order: clampNumber(item[3], 1, availableZones.length, index + 1)
       };
-    }).slice(0, 5);
+    }).slice(0, 10);
     return {
       slot,
       name: String(raw.n || `Id\u0151z\xEDt\xE9s ${slot}`),
@@ -5615,6 +5616,7 @@ var GardenMapCard = class extends HTMLElement {
     const yamlIrrigation = config.irrigation || {};
     this.yamlIrrigationConfig = {
       ...yamlIrrigation,
+      zones: cloneIrrigationItems(yamlIrrigation.zones),
       heads: cloneIrrigationItems(yamlIrrigation.heads),
       drip_lines: cloneIrrigationItems(yamlIrrigation.drip_lines || yamlIrrigation.dripLines)
     };
@@ -5624,13 +5626,14 @@ var GardenMapCard = class extends HTMLElement {
     };
     try {
       const savedIrrigation = JSON.parse(window.localStorage.getItem(`garden-map-irrigation-settings:${config.entity}`) || "null");
-      if (savedIrrigation?.heads) {
+      if (savedIrrigation && (Array.isArray(savedIrrigation.zones) || Array.isArray(savedIrrigation.heads))) {
         const configuredIrrigation = this.yamlIrrigationConfig || {};
         this.config = {
           ...config,
           irrigation: {
             ...configuredIrrigation,
             ...savedIrrigation,
+            zones: Array.isArray(savedIrrigation.zones) ? cloneIrrigationItems(savedIrrigation.zones) : cloneIrrigationItems(configuredIrrigation.zones),
             heads: mergeSavedIrrigationItems(configuredIrrigation.heads, savedIrrigation.heads),
             drip_lines: mergeSavedIrrigationItems(
               configuredIrrigation.drip_lines || configuredIrrigation.dripLines,
@@ -5759,19 +5762,29 @@ var GardenMapCard = class extends HTMLElement {
           .cloud-status[data-state="waiting"] { color:#ffd45c; }
           .cloud-status[data-state="offline"] { color:#ff6b6b; }
           ha-card.irrigation-mode .app-shell, ha-card.irrigation-mode .app-panel, ha-card.irrigation-mode > .calibration, ha-card.irrigation-mode .command-dock { display:none !important; }
-          .irrigation-head-editor { display:none; }
-          ha-card.irrigation-mode > .irrigation-head-editor { display:block; }
-          ha-card > .calibration, ha-card > .irrigation-head-editor { margin:0; border:0; border-top:1px solid rgba(255,255,255,.14); border-radius:0; background:rgba(9,18,27,.94); color:#fff; }
-          ha-card > .calibration > summary, ha-card > .irrigation-head-editor > summary { display:block; padding:15px 18px; color:#fff !important; font-weight:800; cursor:pointer; list-style:none; }
-          ha-card > .calibration > summary::-webkit-details-marker, ha-card > .irrigation-head-editor > summary::-webkit-details-marker { display:none; }
-          ha-card > .calibration > summary::before, ha-card > .irrigation-head-editor > summary::before { content:"\u25B8"; display:inline-block; margin-right:9px; color:#fff; transition:transform .18s ease; }
-          ha-card > .calibration[open] > summary::before, ha-card > .irrigation-head-editor[open] > summary::before { transform:rotate(90deg); }
+          .irrigation-head-editor, .irrigation-zone-editor { display:none; }
+          ha-card.irrigation-mode > .irrigation-head-editor, ha-card.irrigation-mode > .irrigation-zone-editor { display:block; }
+          ha-card > .calibration, ha-card > .irrigation-head-editor, ha-card > .irrigation-zone-editor { margin:0; border:0; border-top:1px solid rgba(255,255,255,.14); border-radius:0; background:rgba(9,18,27,.94); color:#fff; }
+          ha-card > .calibration > summary, ha-card > .irrigation-head-editor > summary, ha-card > .irrigation-zone-editor > summary { display:block; padding:15px 18px; color:#fff !important; font-weight:800; cursor:pointer; list-style:none; }
+          ha-card > .calibration > summary::-webkit-details-marker, ha-card > .irrigation-head-editor > summary::-webkit-details-marker, ha-card > .irrigation-zone-editor > summary::-webkit-details-marker { display:none; }
+          ha-card > .calibration > summary::before, ha-card > .irrigation-head-editor > summary::before, ha-card > .irrigation-zone-editor > summary::before { content:"\u25B8"; display:inline-block; margin-right:9px; color:#fff; transition:transform .18s ease; }
+          ha-card > .calibration[open] > summary::before, ha-card > .irrigation-head-editor[open] > summary::before, ha-card > .irrigation-zone-editor[open] > summary::before { transform:rotate(90deg); }
           ha-card > .calibration .calibration-title { color:#fff !important; }
           ha-card > .calibration button, ha-card > .calibration textarea { color:#fff !important; }
           .irrigation-head-editor .head-editor-content { padding:12px 16px 16px; }
           .irrigation-head-editor .head-editor-types, .irrigation-head-editor .head-editor-zones { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
           .irrigation-head-editor button { min-height:40px; padding:8px 13px; border:1px solid var(--divider-color,rgba(127,127,127,.32)); border-radius:12px; background:var(--secondary-background-color,#202936); color:var(--primary-text-color,#fff); font:inherit; cursor:pointer; }
           .irrigation-head-editor button.active { background:var(--primary-color,#149ec2); color:#fff; }
+          .zone-editor-content { display:grid; gap:10px; padding:0 16px 16px; }
+          .zone-editor-list { display:grid; gap:8px; }
+          .zone-editor-row { display:grid; grid-template-columns:44px minmax(110px,1fr) minmax(230px,2fr) 46px 44px; align-items:center; gap:8px; }
+          .zone-editor-id { color:#bae6fd; font-weight:800; text-align:center; }
+          .zone-editor-row input { box-sizing:border-box; width:100%; min-height:40px; padding:7px 9px; border:1px solid rgba(255,255,255,.2); border-radius:10px; background:rgba(255,255,255,.09); color:#fff; font:inherit; }
+          .zone-editor-row input[type="color"] { padding:4px; cursor:pointer; }
+          .zone-editor-row button, .zone-editor-actions button { min-height:40px; padding:7px 11px; border:1px solid rgba(255,255,255,.2); border-radius:10px; background:rgba(255,255,255,.09); color:#fff; font:inherit; font-weight:800; cursor:pointer; }
+          .zone-editor-row button { color:#fecaca; }
+          .zone-editor-actions { display:flex; justify-content:flex-end; gap:8px; }
+          .zone-editor-actions [data-save-irrigation-zones] { background:rgba(22,163,74,.30); border-color:rgba(74,222,128,.62); }
           .head-spray-editor { display:grid; gap:11px; margin-top:14px; padding:13px; border:1px solid rgba(255,255,255,.16); border-radius:12px; background:rgba(255,255,255,.06); }
           .head-spray-editor[hidden] { display:none; }
           .head-spray-selection { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:4px; }
@@ -5827,6 +5840,9 @@ var GardenMapCard = class extends HTMLElement {
             .preview-hint span { font-size:11px; }
             .garden-glass-panel { left:8px; right:8px; bottom:60px; width:auto; max-height:76%; }
             .garden-menu-toggle { right:9px; bottom:9px; min-height:40px; padding:7px 11px; font-size:14px; }
+            .zone-editor-row { grid-template-columns:40px minmax(0,1fr) 44px 42px; }
+            .zone-editor-row input[data-zone-field="entity"] { grid-column:2 / -1; grid-row:2; }
+            .zone-editor-actions { display:grid; grid-template-columns:1fr 1fr; }
           }
         </style>
         <div class="system-switch">
@@ -5919,6 +5935,16 @@ var GardenMapCard = class extends HTMLElement {
           <summary>${this.t("irrigationLog")}</summary>
           <div class="irrigation-log-content" data-role="irrigation-log-content">
             <div class="irrigation-log-empty">${this.t("openLogHint")}</div>
+          </div>
+        </details>
+        <details class="irrigation-zone-editor">
+          <summary>${this.t("zones")}</summary>
+          <div class="zone-editor-content">
+            <div class="zone-editor-list" data-role="irrigation-zone-list"></div>
+            <div class="zone-editor-actions">
+              <button type="button" data-add-irrigation-zone>+ ${this.t("zone")}</button>
+              <button type="button" data-save-irrigation-zones>${this.t("save")}</button>
+            </div>
           </div>
         </details>
         <details class="irrigation-head-editor">
@@ -6083,6 +6109,8 @@ var GardenMapCard = class extends HTMLElement {
     root.querySelectorAll("button[data-system]").forEach((button) => {
       button.addEventListener("click", () => this.setActiveSystem(button.dataset.system));
     });
+    root.querySelector("[data-add-irrigation-zone]")?.addEventListener("click", () => this.addIrrigationZone());
+    root.querySelector("[data-save-irrigation-zones]")?.addEventListener("click", () => this.saveIrrigationZones());
     root.querySelector("[data-irrigation-head-edit]")?.addEventListener("click", () => this.toggleIrrigationHeadEditor());
     const irrigationLogBox = root.querySelector(".irrigation-log-box");
     irrigationLogBox?.addEventListener("toggle", () => {
@@ -6110,6 +6138,7 @@ var GardenMapCard = class extends HTMLElement {
         glassPanel?.classList.toggle("open", this.gardenMenuOpen);
       });
     });
+    this.renderIrrigationZoneEditor();
     canvasWrap?.addEventListener("dblclick", () => {
       if (this.mapOnly) this.setInterfaceOption("mapOnly", false);
     });
@@ -6420,6 +6449,173 @@ var GardenMapCard = class extends HTMLElement {
     });
     this.updateIrrigationHeadEditor();
   }
+  irrigationZoneConfigs() {
+    const zones = Array.isArray(this.config.irrigation?.zones) ? this.config.irrigation.zones : [];
+    return zones.map((zone, index) => ({
+      id: Number(zone?.id ?? index + 1),
+      name: String(zone?.name || `${this.t("zone")} ${Number(zone?.id ?? index + 1)}`),
+      entity: String(zone?.entity || ""),
+      color: String(zone?.color || "#38bdf8")
+    })).filter((zone) => Number.isInteger(zone.id) && zone.id >= 1 && zone.id <= 10);
+  }
+  renderIrrigationZoneEditor() {
+    const list = this.shadowRoot?.querySelector('[data-role="irrigation-zone-list"]');
+    if (!list) return;
+    list.replaceChildren();
+    for (const zone of this.irrigationZoneConfigs()) {
+      const row = document.createElement("div");
+      row.className = "zone-editor-row";
+      row.dataset.zoneId = String(zone.id);
+      const id = document.createElement("span");
+      id.className = "zone-editor-id";
+      id.textContent = `#${zone.id}`;
+      const name = document.createElement("input");
+      name.type = "text";
+      name.value = zone.name;
+      name.placeholder = `${this.t("zone")} ${zone.id}`;
+      name.dataset.zoneField = "name";
+      name.addEventListener("input", () => this.updateIrrigationZoneDraft(zone.id, "name", name.value));
+      const entity = document.createElement("input");
+      entity.type = "text";
+      entity.value = zone.entity;
+      entity.placeholder = "switch.zone_entity";
+      entity.autocapitalize = "none";
+      entity.autocomplete = "off";
+      entity.spellcheck = false;
+      entity.dataset.zoneField = "entity";
+      entity.addEventListener("input", () => this.updateIrrigationZoneDraft(zone.id, "entity", entity.value));
+      const color = document.createElement("input");
+      color.type = "color";
+      color.value = /^#[0-9a-f]{6}$/i.test(zone.color) ? zone.color : "#38bdf8";
+      color.title = "Color";
+      color.dataset.zoneField = "color";
+      color.addEventListener("input", () => this.updateIrrigationZoneDraft(zone.id, "color", color.value));
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.textContent = "\u{1F5D1}";
+      remove.title = this.irrigationCard?.t?.("delete") || this.t("delete");
+      remove.addEventListener("click", () => this.deleteIrrigationZone(zone.id));
+      row.append(id, name, entity, color, remove);
+      list.appendChild(row);
+    }
+  }
+  updateIrrigationZoneDraft(zoneId, field, value) {
+    if (!["name", "entity", "color"].includes(field)) return;
+    const zone = this.config.irrigation?.zones?.find((item) => Number(item?.id) === Number(zoneId));
+    if (zone) zone[field] = value;
+  }
+  addIrrigationZone() {
+    const zones = cloneIrrigationItems(this.config.irrigation?.zones);
+    if (zones.length >= 10) {
+      this.notify(this.language === "hu" ? "Legfeljebb 10 locsolási zóna adható hozzá." : "Up to 10 irrigation zones can be added.");
+      return;
+    }
+    const usedIds = new Set(zones.map((zone) => Number(zone?.id)));
+    const id = Array.from({ length: 10 }, (_, index) => index + 1).find((candidate) => !usedIds.has(candidate));
+    if (!id) return;
+    const colors = ["#38bdf8", "#22c55e", "#f59e0b", "#a855f7", "#ef4444", "#14b8a6", "#f97316", "#ec4899", "#84cc16", "#6366f1"];
+    zones.push({ id, name: `${this.t("zone")} ${id}`, entity: "", color: colors[id - 1] });
+    zones.sort((a, b) => Number(a.id) - Number(b.id));
+    this.config = {
+      ...this.config,
+      irrigation: { ...this.config.irrigation, zones }
+    };
+    const editor = this.shadowRoot?.querySelector(".irrigation-zone-editor");
+    if (editor) editor.open = true;
+    this.renderIrrigationZoneEditor();
+    this.shadowRoot?.querySelector(`.zone-editor-row[data-zone-id="${id}"] input[data-zone-field="name"]`)?.select();
+  }
+  deleteIrrigationZone(zoneId) {
+    const zones = this.irrigationZoneConfigs();
+    if (zones.length <= 1) {
+      this.notify(this.language === "hu" ? "Legalább egy zónának meg kell maradnia." : "At least one zone must remain.");
+      return;
+    }
+    const zone = zones.find((item) => item.id === Number(zoneId));
+    if (!zone) return;
+    const heads = Array.isArray(this.irrigationCard?.heads) ? this.irrigationCard.heads : [];
+    const dripLines = Array.isArray(this.irrigationCard?.dripLines) ? this.irrigationCard.dripLines : [];
+    const relatedCount = heads.filter((item) => Number(item.zone) === zone.id).length + dripLines.filter((item) => Number(item.zone) === zone.id).length;
+    const message = this.language === "hu" ? `${zone.name} törlése${relatedCount ? ` a hozzá tartozó ${relatedCount} locsolóelemet is törli` : ""}. Folytatod?` : `Delete ${zone.name}${relatedCount ? ` and its ${relatedCount} irrigation element(s)` : ""}?`;
+    if (!window.confirm(message)) return;
+    this.config = {
+      ...this.config,
+      irrigation: {
+        ...this.config.irrigation,
+        zones: cloneIrrigationItems(this.config.irrigation?.zones).filter((item) => Number(item.id) !== zone.id)
+      }
+    };
+    if (this.irrigationCard) {
+      this.irrigationCard.heads = heads.filter((item) => Number(item.zone) !== zone.id);
+      this.irrigationCard.dripLines = dripLines.filter((item) => Number(item.zone) !== zone.id);
+      if (Number(this.irrigationCard.activeZone) === zone.id) {
+        this.irrigationCard.activeZone = Number(this.config.irrigation.zones[0]?.id || 1);
+      }
+    }
+    this.renderIrrigationZoneEditor();
+  }
+  renderIrrigationEditZoneButtons() {
+    const container = this.shadowRoot?.querySelector(".head-editor-zones");
+    if (!container) return;
+    container.replaceChildren();
+    for (const zone of this.irrigationZoneConfigs()) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.irrigationEditZone = String(zone.id);
+      button.textContent = zone.name || `${this.t("zone")} ${zone.id}`;
+      button.addEventListener("click", () => this.selectIrrigationEditZone(zone.id));
+      container.appendChild(button);
+    }
+    this.updateIrrigationHeadEditor();
+  }
+  async syncIrrigationZoneHelpers(zones) {
+    if (!this._hass) return;
+    const byId = new Map(zones.map((zone) => [Number(zone.id), zone]));
+    for (let id = 1; id <= 10; id += 1) {
+      const helper = `input_text.irrigation_zone_${id}_entity`;
+      if (!this._hass.states?.[helper]) continue;
+      await this._hass.callService("input_text", "set_value", {
+        entity_id: helper,
+        value: byId.get(id)?.entity || "none"
+      });
+    }
+  }
+  async saveIrrigationZones() {
+    const zones = this.irrigationZoneConfigs().map((zone) => ({
+      ...zone,
+      name: zone.name.trim() || `${this.t("zone")} ${zone.id}`,
+      entity: zone.entity.trim().toLowerCase(),
+      color: /^#[0-9a-f]{6}$/i.test(zone.color) ? zone.color : "#38bdf8"
+    })).sort((a, b) => a.id - b.id);
+    const invalid = zones.find((zone) => !/^switch\.[a-z0-9_]+$/.test(zone.entity));
+    if (invalid) {
+      this.notify(this.language === "hu" ? `${invalid.name}: adj meg egy switch. kezdetű kapcsoló-entitást.` : `${invalid.name}: enter a switch entity beginning with switch.`);
+      return;
+    }
+    if (new Set(zones.map((zone) => zone.entity)).size !== zones.length) {
+      this.notify(this.language === "hu" ? "Ugyanaz a kapcsoló-entitás nem használható két zónához." : "The same switch entity cannot be used for two zones.");
+      return;
+    }
+    this.config = {
+      ...this.config,
+      irrigation: { ...this.config.irrigation, zones }
+    };
+    if (this.irrigationCard) {
+      this.irrigationCard.config = { ...this.irrigationCard.config, zones };
+      if (!zones.some((zone) => zone.id === Number(this.irrigationCard.activeZone))) {
+        this.irrigationCard.activeZone = zones[0]?.id || 1;
+      }
+      this.irrigationCard.render?.();
+      if (this._hass) this.irrigationCard.hass = this._hass;
+    }
+    await this.syncIrrigationZoneHelpers(zones);
+    await this.saveIrrigationSettings(this.irrigationCard?.t?.("saved") || this.t("save"));
+    this.renderIrrigationZoneEditor();
+    this.renderIrrigationEditZoneButtons();
+    this.syncIrrigationMapElements();
+    this.renderer?.setOptions(this.rendererOptions());
+    this.updateIrrigationCountdown();
+  }
   toggleIrrigationHeadEditor() {
     if (!this.irrigationCard) return;
     this.irrigationCard.editMode = !this.irrigationCard.editMode;
@@ -6541,16 +6737,17 @@ var GardenMapCard = class extends HTMLElement {
   }
   irrigationSettingsSnapshot() {
     return {
+      zones: this.irrigationZoneConfigs(),
       heads: Array.isArray(this.irrigationCard?.heads) ? this.irrigationCard.heads : [],
       drip_lines: Array.isArray(this.irrigationCard?.dripLines) ? this.irrigationCard.dripLines : []
     };
   }
-  async saveIrrigationSettings() {
+  async saveIrrigationSettings(successMessage = this.t("sprinklerSaved")) {
     const settings = this.irrigationSettingsSnapshot();
     window.localStorage.setItem(this.irrigationSettingsKey(), JSON.stringify(settings));
     try {
       await this._hass?.callWS({ type: "frontend/set_user_data", key: this.irrigationSettingsKey(), value: settings });
-      this.notify(this.t("sprinklerSaved"));
+      this.notify(successMessage);
     } catch (_error) {
       this.notify(this.t("settingsSavedOnDevice"));
     }
@@ -6562,10 +6759,11 @@ var GardenMapCard = class extends HTMLElement {
     try {
       const response = await this._hass.callWS({ type: "frontend/get_user_data", key });
       const settings = response?.value ?? response;
-      if (!Array.isArray(settings?.heads)) return;
+      if (!settings || !Array.isArray(settings.zones) && !Array.isArray(settings.heads)) return;
       const configuredIrrigation = this.yamlIrrigationConfig || this.config.irrigation || {};
       const mergedSettings = {
         ...settings,
+        zones: Array.isArray(settings.zones) ? cloneIrrigationItems(settings.zones) : cloneIrrigationItems(configuredIrrigation.zones),
         heads: mergeSavedIrrigationItems(configuredIrrigation.heads, settings.heads),
         drip_lines: mergeSavedIrrigationItems(
           configuredIrrigation.drip_lines || configuredIrrigation.dripLines,
@@ -6578,9 +6776,17 @@ var GardenMapCard = class extends HTMLElement {
         irrigation: { ...configuredIrrigation, ...mergedSettings }
       };
       if (this.irrigationCard) {
+        this.irrigationCard.config = { ...this.irrigationCard.config, zones: mergedSettings.zones };
         this.irrigationCard.heads = mergedSettings.heads;
         this.irrigationCard.dripLines = mergedSettings.drip_lines;
+        if (!mergedSettings.zones.some((zone) => Number(zone.id) === Number(this.irrigationCard.activeZone))) {
+          this.irrigationCard.activeZone = Number(mergedSettings.zones[0]?.id || 1);
+        }
+        this.irrigationCard.render?.();
+        if (this._hass) this.irrigationCard.hass = this._hass;
         this.syncIrrigationMapElements();
+        this.renderIrrigationZoneEditor();
+        this.renderIrrigationEditZoneButtons();
         this.updateIrrigationHeadEditor();
         this.renderer?.setOptions(this.rendererOptions());
       }

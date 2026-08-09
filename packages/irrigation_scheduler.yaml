@@ -34,10 +34,45 @@ input_number:
     step: 1
     mode: box
     unit_of_measurement: perc
+  irrigation_manual_zone_6_minutes:
+    name: Kézi öntözés 6. zóna idő
+    min: 1
+    max: 180
+    step: 1
+    mode: box
+    unit_of_measurement: perc
+  irrigation_manual_zone_7_minutes:
+    name: Kézi öntözés 7. zóna idő
+    min: 1
+    max: 180
+    step: 1
+    mode: box
+    unit_of_measurement: perc
+  irrigation_manual_zone_8_minutes:
+    name: Kézi öntözés 8. zóna idő
+    min: 1
+    max: 180
+    step: 1
+    mode: box
+    unit_of_measurement: perc
+  irrigation_manual_zone_9_minutes:
+    name: Kézi öntözés 9. zóna idő
+    min: 1
+    max: 180
+    step: 1
+    mode: box
+    unit_of_measurement: perc
+  irrigation_manual_zone_10_minutes:
+    name: Kézi öntözés 10. zóna idő
+    min: 1
+    max: 180
+    step: 1
+    mode: box
+    unit_of_measurement: perc
   irrigation_resume_order:
     name: Öntözés folytatási sorrend
     min: 0
-    max: 5
+    max: 10
     step: 1
     mode: box
 
@@ -109,6 +144,36 @@ input_text:
   irrigation_resume_program:
     name: Folytatandó öntözési program
     max: 255
+  irrigation_zone_1_entity:
+    name: Öntözés 1. zóna kapcsoló
+    initial: switch.ontozovezerlo_zona_1
+  irrigation_zone_2_entity:
+    name: Öntözés 2. zóna kapcsoló
+    initial: switch.ontozovezerlo_zona_2
+  irrigation_zone_3_entity:
+    name: Öntözés 3. zóna kapcsoló
+    initial: switch.ontozovezerlo_zona_3
+  irrigation_zone_4_entity:
+    name: Öntözés 4. zóna kapcsoló
+    initial: switch.ontozovezerlo_zona_4
+  irrigation_zone_5_entity:
+    name: Öntözés 5. zóna kapcsoló
+    initial: switch.kerticsap_kapu_fenyo
+  irrigation_zone_6_entity:
+    name: Öntözés 6. zóna kapcsoló
+    initial: none
+  irrigation_zone_7_entity:
+    name: Öntözés 7. zóna kapcsoló
+    initial: none
+  irrigation_zone_8_entity:
+    name: Öntözés 8. zóna kapcsoló
+    initial: none
+  irrigation_zone_9_entity:
+    name: Öntözés 9. zóna kapcsoló
+    initial: none
+  irrigation_zone_10_entity:
+    name: Öntözés 10. zóna kapcsoló
+    initial: none
 
 timer:
   irrigation_zone:
@@ -132,6 +197,21 @@ timer:
   irrigation_manual_zone_5:
     name: Kézi öntözés 5. zóna
     restore: true
+  irrigation_manual_zone_6:
+    name: Kézi öntözés 6. zóna
+    restore: true
+  irrigation_manual_zone_7:
+    name: Kézi öntözés 7. zóna
+    restore: true
+  irrigation_manual_zone_8:
+    name: Kézi öntözés 8. zóna
+    restore: true
+  irrigation_manual_zone_9:
+    name: Kézi öntözés 9. zóna
+    restore: true
+  irrigation_manual_zone_10:
+    name: Kézi öntözés 10. zóna
+    restore: true
   irrigation_program_zone_1:
     name: Időzített öntözés 1. zóna
     restore: true
@@ -147,6 +227,21 @@ timer:
   irrigation_program_zone_5:
     name: Időzített öntözés 5. zóna
     restore: true
+  irrigation_program_zone_6:
+    name: Időzített öntözés 6. zóna
+    restore: true
+  irrigation_program_zone_7:
+    name: Időzített öntözés 7. zóna
+    restore: true
+  irrigation_program_zone_8:
+    name: Időzített öntözés 8. zóna
+    restore: true
+  irrigation_program_zone_9:
+    name: Időzített öntözés 9. zóna
+    restore: true
+  irrigation_program_zone_10:
+    name: Időzített öntözés 10. zóna
+    restore: true
 
 script:
   irrigation_run_program_zone:
@@ -154,7 +249,7 @@ script:
     description: Az azonos sorrendszámú programzónákat egymástól függetlenül, párhuzamosan működteti.
     icon: mdi:timer-play-outline
     mode: parallel
-    max: 5
+    max: 10
     fields:
       zone_id:
         name: Zóna
@@ -162,7 +257,7 @@ script:
         selector:
           number:
             min: 1
-            max: 5
+            max: 10
             step: 1
       minutes:
         name: Perc
@@ -180,7 +275,10 @@ script:
             {% elif zone_id | int == 3 %}switch.ontozovezerlo_zona_3
             {% elif zone_id | int == 4 %}switch.ontozovezerlo_zona_4
             {% elif zone_id | int == 5 %}switch.kerticsap_kapu_fenyo
-            {% else %}none{% endif %}
+            {% else %}
+              {% set configured = states('input_text.irrigation_zone_' ~ (zone_id | int) ~ '_entity') %}
+              {{ configured if configured[0:7] == 'switch.' else 'none' }}
+            {% endif %}
           current_timer: "timer.irrigation_program_zone_{{ zone_id | int }}"
           countdown_dp: "{{ 8 + (zone_id | int) }}"
       - choose:
@@ -273,7 +371,7 @@ script:
         selector:
           number:
             min: 1
-            max: 5
+            max: 10
             step: 1
     sequence:
       - action: script.turn_off
@@ -290,11 +388,21 @@ script:
             - timer.irrigation_manual_zone_3
             - timer.irrigation_manual_zone_4
             - timer.irrigation_manual_zone_5
+            - timer.irrigation_manual_zone_6
+            - timer.irrigation_manual_zone_7
+            - timer.irrigation_manual_zone_8
+            - timer.irrigation_manual_zone_9
+            - timer.irrigation_manual_zone_10
             - timer.irrigation_program_zone_1
             - timer.irrigation_program_zone_2
             - timer.irrigation_program_zone_3
             - timer.irrigation_program_zone_4
             - timer.irrigation_program_zone_5
+            - timer.irrigation_program_zone_6
+            - timer.irrigation_program_zone_7
+            - timer.irrigation_program_zone_8
+            - timer.irrigation_program_zone_9
+            - timer.irrigation_program_zone_10
       - variables:
           normalized_program_json: >-
             {{ program_json[2:] if program_json[0:2] == 'J:' else program_json }}
@@ -370,14 +478,23 @@ script:
                 {% endif %}
       - action: switch.turn_off
         target:
-          entity_id:
-            - switch.ontozovezerlo_zona_1
-            - switch.ontozovezerlo_zona_2
-            - switch.ontozovezerlo_zona_3
-            - switch.ontozovezerlo_zona_4
-            - switch.kerticsap_kapu_fenyo
+          entity_id: >-
+            {% set ns = namespace(items=[
+              'switch.ontozovezerlo_zona_1',
+              'switch.ontozovezerlo_zona_2',
+              'switch.ontozovezerlo_zona_3',
+              'switch.ontozovezerlo_zona_4',
+              'switch.kerticsap_kapu_fenyo'
+            ]) %}
+            {% for id in range(6, 11) %}
+              {% set entity = states('input_text.irrigation_zone_' ~ id ~ '_entity') %}
+              {% if entity[0:7] == 'switch.' %}
+                {% set ns.items = ns.items + [entity] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.items | unique | list }}
       - repeat:
-          for_each: [1, 2, 3, 4, 5]
+          for_each: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
           sequence:
             - variables:
                 current_order: "{{ repeat.item | int }}"
@@ -482,14 +599,28 @@ script:
                               - timer.irrigation_program_zone_3
                               - timer.irrigation_program_zone_4
                               - timer.irrigation_program_zone_5
+                              - timer.irrigation_program_zone_6
+                              - timer.irrigation_program_zone_7
+                              - timer.irrigation_program_zone_8
+                              - timer.irrigation_program_zone_9
+                              - timer.irrigation_program_zone_10
                         - action: switch.turn_off
                           target:
-                            entity_id:
-                              - switch.ontozovezerlo_zona_1
-                              - switch.ontozovezerlo_zona_2
-                              - switch.ontozovezerlo_zona_3
-                              - switch.ontozovezerlo_zona_4
-                              - switch.kerticsap_kapu_fenyo
+                            entity_id: >-
+                              {% set ns = namespace(items=[
+                                'switch.ontozovezerlo_zona_1',
+                                'switch.ontozovezerlo_zona_2',
+                                'switch.ontozovezerlo_zona_3',
+                                'switch.ontozovezerlo_zona_4',
+                                'switch.kerticsap_kapu_fenyo'
+                              ]) %}
+                              {% for id in range(6, 11) %}
+                                {% set entity = states('input_text.irrigation_zone_' ~ id ~ '_entity') %}
+                                {% if entity[0:7] == 'switch.' %}
+                                  {% set ns.items = ns.items + [entity] %}
+                                {% endif %}
+                              {% endfor %}
+                              {{ ns.items | unique | list }}
                         - action: input_text.set_value
                           target:
                             entity_id: input_text.irrigation_status
@@ -580,12 +711,21 @@ script:
                         entity_id: timer.irrigation_zone
       - action: switch.turn_off
         target:
-          entity_id:
-            - switch.ontozovezerlo_zona_1
-            - switch.ontozovezerlo_zona_2
-            - switch.ontozovezerlo_zona_3
-            - switch.ontozovezerlo_zona_4
-            - switch.kerticsap_kapu_fenyo
+          entity_id: >-
+            {% set ns = namespace(items=[
+              'switch.ontozovezerlo_zona_1',
+              'switch.ontozovezerlo_zona_2',
+              'switch.ontozovezerlo_zona_3',
+              'switch.ontozovezerlo_zona_4',
+              'switch.kerticsap_kapu_fenyo'
+            ]) %}
+            {% for id in range(6, 11) %}
+              {% set entity = states('input_text.irrigation_zone_' ~ id ~ '_entity') %}
+              {% if entity[0:7] == 'switch.' %}
+                {% set ns.items = ns.items + [entity] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.items | unique | list }}
       - action: input_text.set_value
         target:
           entity_id: input_text.irrigation_status
@@ -621,7 +761,7 @@ script:
     description: A kézzel kiválasztott zónákat egymástól függetlenül, párhuzamosan működteti.
     icon: mdi:timer-play
     mode: parallel
-    max: 5
+    max: 10
     fields:
       zone_id:
         name: Zóna
@@ -629,8 +769,17 @@ script:
         selector:
           number:
             min: 1
-            max: 5
+            max: 10
             step: 1
+      zone_entity:
+        name: Kapcsoló entitás
+        selector:
+          entity:
+            domain: switch
+      zone_name:
+        name: Zónanév
+        selector:
+          text:
       minutes:
         name: Perc
         required: true
@@ -647,7 +796,12 @@ script:
             {% elif zone_id | int == 3 %}switch.ontozovezerlo_zona_3
             {% elif zone_id | int == 4 %}switch.ontozovezerlo_zona_4
             {% elif zone_id | int == 5 %}switch.kerticsap_kapu_fenyo
-            {% else %}none{% endif %}
+            {% else %}
+              {% set requested = zone_entity | default('') | trim %}
+              {% set configured = requested if requested[0:7] == 'switch.' else states('input_text.irrigation_zone_' ~ (zone_id | int) ~ '_entity') %}
+              {{ configured if configured[0:7] == 'switch.' else 'none' }}
+            {% endif %}
+          current_name: "{{ zone_name | default('Zóna ' ~ (zone_id | int), true) }}"
           # A vezérlő valódi DP-kiosztása: Z1=9, Z2=10, Z3=11, Z4=12.
           countdown_dp: "{{ 8 + (zone_id | int) }}"
           # Ennél a vezérlőnél minden countdown DP percben értendő.
@@ -662,7 +816,7 @@ script:
                 target:
                   entity_id: input_text.irrigation_status
                 data:
-                  value: "Kézi öntözés – Zóna {{ zone_id | int }} – {{ minutes | int }} perc"
+                  value: "Kézi öntözés – {{ current_name }} – {{ minutes | int }} perc"
               - choose:
                   - conditions:
                       - condition: template
@@ -715,7 +869,7 @@ script:
     description: Csak a kiválasztott zónát állítja le, a többi kézi és időzített zónát nem.
     icon: mdi:timer-stop
     mode: parallel
-    max: 5
+    max: 10
     fields:
       zone_id:
         name: Zóna
@@ -723,8 +877,17 @@ script:
         selector:
           number:
             min: 1
-            max: 5
+            max: 10
             step: 1
+      zone_entity:
+        name: Kapcsoló entitás
+        selector:
+          entity:
+            domain: switch
+      zone_name:
+        name: Zónanév
+        selector:
+          text:
     sequence:
       - variables:
           current_entity: >-
@@ -733,7 +896,12 @@ script:
             {% elif zone_id | int == 3 %}switch.ontozovezerlo_zona_3
             {% elif zone_id | int == 4 %}switch.ontozovezerlo_zona_4
             {% elif zone_id | int == 5 %}switch.kerticsap_kapu_fenyo
-            {% else %}none{% endif %}
+            {% else %}
+              {% set requested = zone_entity | default('') | trim %}
+              {% set configured = requested if requested[0:7] == 'switch.' else states('input_text.irrigation_zone_' ~ (zone_id | int) ~ '_entity') %}
+              {{ configured if configured[0:7] == 'switch.' else 'none' }}
+            {% endif %}
+          current_name: "{{ zone_name | default('Zóna ' ~ (zone_id | int), true) }}"
           manual_timer: "timer.irrigation_manual_zone_{{ zone_id | int }}"
           program_timer: "timer.irrigation_program_zone_{{ zone_id | int }}"
       - condition: template
@@ -750,7 +918,7 @@ script:
         target:
           entity_id: input_text.irrigation_status
         data:
-          value: "Zóna {{ zone_id | int }} leállítva"
+          value: "{{ current_name }} leállítva"
 
   irrigation_stop:
     alias: Öntözés teljes leállítása
@@ -772,11 +940,21 @@ script:
             - timer.irrigation_manual_zone_3
             - timer.irrigation_manual_zone_4
             - timer.irrigation_manual_zone_5
+            - timer.irrigation_manual_zone_6
+            - timer.irrigation_manual_zone_7
+            - timer.irrigation_manual_zone_8
+            - timer.irrigation_manual_zone_9
+            - timer.irrigation_manual_zone_10
             - timer.irrigation_program_zone_1
             - timer.irrigation_program_zone_2
             - timer.irrigation_program_zone_3
             - timer.irrigation_program_zone_4
             - timer.irrigation_program_zone_5
+            - timer.irrigation_program_zone_6
+            - timer.irrigation_program_zone_7
+            - timer.irrigation_program_zone_8
+            - timer.irrigation_program_zone_9
+            - timer.irrigation_program_zone_10
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.irrigation_resume_active
@@ -787,12 +965,21 @@ script:
           value: 0
       - action: switch.turn_off
         target:
-          entity_id:
-            - switch.ontozovezerlo_zona_1
-            - switch.ontozovezerlo_zona_2
-            - switch.ontozovezerlo_zona_3
-            - switch.ontozovezerlo_zona_4
-            - switch.kerticsap_kapu_fenyo
+          entity_id: >-
+            {% set ns = namespace(items=[
+              'switch.ontozovezerlo_zona_1',
+              'switch.ontozovezerlo_zona_2',
+              'switch.ontozovezerlo_zona_3',
+              'switch.ontozovezerlo_zona_4',
+              'switch.kerticsap_kapu_fenyo'
+            ]) %}
+            {% for id in range(6, 11) %}
+              {% set entity = states('input_text.irrigation_zone_' ~ id ~ '_entity') %}
+              {% if entity[0:7] == 'switch.' %}
+                {% set ns.items = ns.items + [entity] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.items | unique | list }}
       - action: input_text.set_value
         target:
           entity_id: input_text.irrigation_status
@@ -804,7 +991,7 @@ automation:
     alias: Öntözés – kézi zónák időzített leállítása
     description: A saját időzítő lejáratakor csak az érintett kézi zónát állítja le.
     mode: parallel
-    max: 5
+    max: 10
     triggers:
       - trigger: event
         event_type: timer.finished
@@ -831,6 +1018,31 @@ automation:
         event_data:
           entity_id: timer.irrigation_manual_zone_5
         id: "5"
+      - trigger: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.irrigation_manual_zone_6
+        id: "6"
+      - trigger: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.irrigation_manual_zone_7
+        id: "7"
+      - trigger: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.irrigation_manual_zone_8
+        id: "8"
+      - trigger: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.irrigation_manual_zone_9
+        id: "9"
+      - trigger: event
+        event_type: timer.finished
+        event_data:
+          entity_id: timer.irrigation_manual_zone_10
+        id: "10"
     actions:
       - variables:
           zone_id: "{{ trigger.id | int }}"
@@ -840,7 +1052,10 @@ automation:
             {% elif trigger.id == '3' %}switch.ontozovezerlo_zona_3
             {% elif trigger.id == '4' %}switch.ontozovezerlo_zona_4
             {% elif trigger.id == '5' %}switch.kerticsap_kapu_fenyo
-            {% else %}none{% endif %}
+            {% else %}
+              {% set configured = states('input_text.irrigation_zone_' ~ trigger.id ~ '_entity') %}
+              {{ configured if configured[0:7] == 'switch.' else 'none' }}
+            {% endif %}
       - condition: template
         value_template: "{{ current_entity | trim != 'none' }}"
       - action: switch.turn_off
@@ -891,12 +1106,21 @@ automation:
           seconds: "{{ remaining_seconds | int(0) }}"
       - action: switch.turn_off
         target:
-          entity_id:
-            - switch.ontozovezerlo_zona_1
-            - switch.ontozovezerlo_zona_2
-            - switch.ontozovezerlo_zona_3
-            - switch.ontozovezerlo_zona_4
-            - switch.kerticsap_kapu_fenyo
+          entity_id: >-
+            {% set ns = namespace(items=[
+              'switch.ontozovezerlo_zona_1',
+              'switch.ontozovezerlo_zona_2',
+              'switch.ontozovezerlo_zona_3',
+              'switch.ontozovezerlo_zona_4',
+              'switch.kerticsap_kapu_fenyo'
+            ]) %}
+            {% for id in range(6, 11) %}
+              {% set entity = states('input_text.irrigation_zone_' ~ id ~ '_entity') %}
+              {% if entity[0:7] == 'switch.' %}
+                {% set ns.items = ns.items + [entity] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.items | unique | list }}
       - action: timer.cancel
         target:
           entity_id: timer.irrigation_zone
