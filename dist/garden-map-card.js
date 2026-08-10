@@ -7167,8 +7167,11 @@ var GardenMapCard = class extends HTMLElement {
   updateCloudStatus(attributes = {}) {
     const cloudConnected = attributes.cloud_connected;
     const robotOnline = attributes.robot_online;
-    const state = cloudConnected === false ? "offline" : robotOnline === true ? "online" : "waiting";
-    const text = cloudConnected === false ? this.t("cloudDisconnected") : robotOnline === true ? this.t("cloudRobotOnline") : cloudConnected === true ? this.t("cloudRobotNoResponse") : this.t("cloudChecking");
+    const mqttConnected = attributes.live_shadow_connected;
+    const state = cloudConnected === false || mqttConnected === false ? "offline" : robotOnline === true ? "online" : "waiting";
+    const baseText = cloudConnected === false ? this.t("cloudDisconnected") : robotOnline === true ? this.t("cloudRobotOnline") : cloudConnected === true ? this.t("cloudRobotNoResponse") : this.t("cloudChecking");
+    const mqttText = typeof mqttConnected === "boolean" ? ` · MQTT: ${mqttConnected ? "online" : "offline"}` : "";
+    const text = `${baseText}${mqttText}`;
     for (const role of ["cloud-status", "map-cloud-status"]) {
       const badge = this.shadowRoot?.querySelector(`[data-role="${role}"]`);
       if (badge) {
