@@ -44,10 +44,22 @@ function autoZones(card, area = card.entity?.attributes?.area_definition || {}) 
   return Array.isArray(direct) ? direct : [];
 }
 
-function ridableAreas(card, area = card.entity?.attributes?.area_definition || {}) {
-  let edges=Array.isArray(card.entity?.attributes?.ridable_areas) ? card.entity.attributes.ridable_areas : [];
-  if (!edges.length) for (const key of ["ridable_areas", "ridableAreas"]) if (Array.isArray(area?.[key])) { edges=area[key]; break; }
-  return edges.filter((edge)=>Array.isArray(edge?.vertexs)&&edge.vertexs.length>=2);
+function ridableAreas(card) {
+  const states=card._hass?.states||{};
+  const configuredId=card.config?.entity;
+  const activeId=typeof card.activeEntityId==="function"?card.activeEntityId():card.activeMapEntityId;
+  const sources=[card.entity,states[configuredId],states[activeId]];
+  const configuredBase=String(configuredId||"").replace(/^sensor\./,"").replace(/_map(?:_\d+)?$/,"");
+  for(const [entityId,state] of Object.entries(states))if(entityId.startsWith(`sensor.${configuredBase}_map`)&&state?.attributes?.ridable_areas)sources.push(state);
+  for(const source of sources){
+    const attrs=source?.attributes||{};
+    let edges=Array.isArray(attrs.ridable_areas)?attrs.ridable_areas:[];
+    const area=attrs.area_definition||{};
+    if(!edges.length)for(const key of ["ridable_areas","ridableAreas"])if(Array.isArray(area?.[key])){edges=area[key];break;}
+    const valid=edges.filter((edge)=>edge&&Number.isFinite(Number(edge.id)));
+    if(valid.length)return valid;
+  }
+  return [];
 }
 
 function choiceRow(values, selected, onSelect) {
@@ -70,7 +82,7 @@ function openEdgeModal(card, edge) {
   card.shadowRoot.querySelector(".edge-settings-backdrop")?.remove();
   let height=[30,40,50,60,70].includes(Number(edge.cutter_height))?Number(edge.cutter_height):50;
   let distance=[5,7,10,13,15,17,20].includes(Number(edge.ride_distance))?Number(edge.ride_distance):10;
-  const backdrop=document.createElement("div");backdrop.className="edge-settings-backdrop";
+  const backdrop=document.createElement("div");backdrop.className="edge-settings-backdrop";backdrop.dataset.edgeId=String(edge.id);
   const modal=document.createElement("div");modal.className="edge-settings-modal";
   modal.innerHTML=`<div class="edge-modal-head"><strong>${esc(t(card,"edgeSettings"))}</strong><button type="button" class="edge-close" aria-label="${esc(t(card,"close"))}">×</button></div><label>${esc(t(card,"cuttingHeightMm"))}</label><div class="edge-height-slot"></div><label>${esc(t(card,"edgeOverlapCm"))}</label><div class="edge-preview-slot"></div><div class="edge-distance-slot"></div><button type="button" class="edge-save">${esc(t(card,"save"))}</button>`;
   const preview=edgePreview(card,distance);
@@ -207,6 +219,7 @@ function obstacle(card, switchId, levelId) {
 
 export function enhanceGardenAnthbot(Card) {
   const p = Card.prototype;
+  const originalHassDescriptor = Object.getOwnPropertyDescriptor(p, "hass");
   const originalRender = p.render;
   const originalHandleCommand = p.handleCommand;
   const originalUpdateRenderer = p.updateRenderer;
@@ -412,7 +425,7 @@ export function enhanceGardenAnthbot(Card) {
     grid.append(this.createCommandTile(t(this,"cloud"),t(this,"cloudSub"),"connect"),this.createMowHeightControl(),this.createNumberControl(t(this,"mowCount"),"mowCount",1,3,1,"×"),obstacle(this,this.getSwitchEntity("visualObstacle"),this.getNumberEntity("visualObstacleLevel")),this.createNumberControl(t(this,"customDirection"),"mowDirection",0,180,1,"deg"),this.createNumberControl(t(this,"rainDelay"),"rainContinue",0,8,1,"h"),this.createNumberControl(t(this,"volume"),"voiceVolume",0,100,1,"%"),this.createSwitchControl(t(this,"rainDetection"),"rain"),this.createSwitchControl(t(this,"customCutDirection"),"customDirection"),this.createSwitchControl(t(this,"edgeReturn"),"edgeReturn"),this.createSwitchControl(t(this,"autoDockMow"),"autoDockMow"));
     global.querySelector(".settings-section-body").appendChild(grid);body.appendChild(global);
     const edges=ridableAreas(this);
-    if(edges.length){const edgeSection=section(this,t(this,"edgeSettings"),"edges");const edgeGrid=this.createPanelGrid();edges.forEach((edge,index)=>{const tile=document.createElement("button");tile.type="button";tile.className="panel-tile edge-settings-tile";tile.innerHTML=`<strong>${esc(edge.name||`${t(this,"edge")} ${index+1}`)}</strong><span>${esc(t(this,"edgeSettingsHint"))}</span>`;tile.addEventListener("click",()=>openEdgeModal(this,edge));edgeGrid.appendChild(tile);});edgeSection.querySelector(".settings-section-body").appendChild(edgeGrid);body.appendChild(edgeSection);}
+    if(edges.length){const edgeSection=section(this,t(this,"edgeSettings"),"edges");const edgeGrid=this.createPanelGrid();edges.forEach((edge,index)=>{const tile=document.createElement("button");tile.type="button";tile.className="panel-tile edge-settings-tile";const edgeName=edges.length===1?t(this,"edge"):(edge.name||`${t(this,"edge")} ${index+1}`);tile.innerHTML=`<strong>${esc(edgeName)}</strong><span>${esc(t(this,"edgeSettingsHint"))}</span>`;tile.addEventListener("click",()=>openEdgeModal(this,edge));edgeGrid.appendChild(tile);});edgeSection.querySelector(".settings-section-body").appendChild(edgeGrid);body.appendChild(edgeSection);}
     for (const [kind,title,zones] of [["manual",t(this,"manualZones"),this.currentZones()],["auto",t(this,"autoZones"),autoZones(this)]]) {
       if (!zones.length) continue; const group=section(this,title,kind);const content=group.querySelector(".settings-section-body");
       zones.forEach((zone)=>{const item=document.createElement("details");item.className="settings-section";item.innerHTML=`<summary>${esc(zone.name||`${t(this,"zone")} ${zone.id}`)}</summary><div class="settings-section-body"></div>`;const zg=this.createPanelGrid();
@@ -446,4 +459,36 @@ export function enhanceGardenAnthbot(Card) {
     }
     return result;
   };
+
+  if (originalHassDescriptor?.set) {
+    Object.defineProperty(p, "hass", {
+      configurable: originalHassDescriptor.configurable,
+      enumerable: originalHassDescriptor.enumerable,
+      get: originalHassDescriptor.get || function() { return this._hass; },
+      set: function(hass) {
+        originalHassDescriptor.set.call(this, hass);
+        const attrs = this._hass?.states?.[this.config?.entity]?.attributes || this.entity?.attributes || {};
+        const signature = JSON.stringify([
+          attrs.ridable_area_time ?? null,
+          ridableAreas(this),
+        ]);
+        const previous = this.gardenEdgeStateSignature;
+        this.gardenEdgeStateSignature = signature;
+        if (previous === undefined || previous === signature) return;
+
+        const openModal = this.shadowRoot?.querySelector(".edge-settings-backdrop");
+        if (openModal) {
+          const edgeId = openModal.dataset.edgeId;
+          const edge = ridableAreas(this).find((item) => String(item.id) === edgeId);
+          if (edge) openEdgeModal(this, edge);
+          else openModal.remove();
+          return;
+        }
+        if (this.activePanel === "settings") {
+          const body = this.shadowRoot?.querySelector('[data-role="panel-body"]');
+          if (body) this.renderSettingsPanel(body);
+        }
+      },
+    });
+  }
 }
