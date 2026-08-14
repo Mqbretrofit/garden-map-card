@@ -10,15 +10,30 @@ permissions:
 
 jobs:
   release:
-    if: contains(github.event.head_commit.message, '[release v162]')
+    if: contains(github.event.head_commit.message, '[release v')
     runs-on: ubuntu-latest
+    env:
+      RELEASE_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
     steps:
       - name: Check out release sources
         uses: actions/checkout@v4
 
-      - name: Build HACS release archive
+      - name: Determine release tag
+        id: release
+        shell: bash
         run: |
-          zip -9 "garden-map-card-v162.zip" \
+          tag="$(printf '%s\n' "$RELEASE_COMMIT_MESSAGE" | sed -n 's/.*\[release \(v[^]]*\)\].*/\1/p')"
+          if [ -z "$tag" ]; then
+            echo "Could not determine the release tag from the commit message."
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Build HACS release archives
+        shell: bash
+        run: |
+          archive="garden-map-card-${{ steps.release.outputs.tag }}.zip"
+          zip -9 "$archive" \
             garden-map-card.js \
             garden-map-card.source.js \
             garden-anthbot-enhancements.js \
@@ -34,12 +49,26 @@ jobs:
             garden.png \
             TELEPITES.txt
 
-      - name: Publish release
+          # With zip_release enabled, HACS downloads the release asset
+          # whose name matches "filename" in hacs.json.
+          cp "$archive" garden-map-card.js
+
+      - name: Publish or repair release
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          gh release create "v162" "garden-map-card-v162.zip" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --target "${GITHUB_SHA}" \
-            --title "Garden Map Card v162" \
-            --notes "Adds the complete Anthbot control and settings interface, manual and automatic multi-zone mowing, dynamic start/pause/resume control, maintenance and diagnostics, 23-language support, and the app-style cutting-height and 5-20 cm boundary-overlap editor with animated mower preview. Empty boundary records are hidden. Existing irrigation, calibration and mobile map behavior are preserved."
+          tag="${{ steps.release.outputs.tag }}"
+          archive="garden-map-card-${tag}.zip"
+
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" "$archive" garden-map-card.js \
+              --clobber \
+              --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$tag" "$archive" garden-map-card.js \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "Garden Map Card $tag" \
+              --generate-notes
+          fi
