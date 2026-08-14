@@ -70,5 +70,5 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "Garden Map Card $tag" \
-              --generate-notes
+              --notes "Fixes edge settings so the card reads the current app-compatible ridable-area definition instead of an older embedded map copy. Saved cutting height and boundary overlap now appear immediately when the editor is reopened. Includes the complete Anthbot control and settings interface, manual and automatic multi-zone mowing, dynamic start/pause/resume control, maintenance and diagnostics, 23-language support, and the animated 5-20 cm boundary-overlap editor. Existing irrigation, calibration and mobile map behavior are preserved."
           fi

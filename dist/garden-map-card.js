@@ -1,4 +1,5 @@
-// Garden Map Card v161.7-test - dashboard zone editor and dynamic irrigation zones
+import { enhanceGardenAnthbot } from "./garden-anthbot-enhancements.js?v=163-edge1";
+// Garden Map Card v163 - unified garden, irrigation and Anthbot control
 var DEFAULT_ZONES = [
   { id: 1, name: "Zona 1", entity: "switch.ontozovezerlo_zona_1", color: "#38bdf8" },
   { id: 2, name: "Zona 2", entity: "switch.ontozovezerlo_zona_2", color: "#22c55e" },
@@ -5540,11 +5541,16 @@ var NUMBER_MAP = {
   mowHeight: ["mow_height", "mow_height_setting", "mow height"],
   mowDirection: ["custom_mowing_direction", "custom_mowing_direction_setting", "custom mowing direction"],
   rainContinue: ["rain_continue_time", "rain_continue_time_setting", "rain continue time"],
-  voiceVolume: ["voice_volume", "voice_volume_setting", "voice volume"]
+  voiceVolume: ["voice_volume", "voice_volume_setting", "voice volume"],
+  mowCount: ["mow_count", "mow_count_setting", "mowing passes"],
+  visualObstacleLevel: ["visual_obstacle_level", "visual_obstacle_level_setting", "visual obstacle sensitivity"]
 };
 var SWITCH_MAP = {
   rain: ["rain_perception", "rain_perception_enabled", "rain perception"],
-  customDirection: ["custom_mowing_direction_enabled", "custom mowing direction"]
+  customDirection: ["custom_mowing_direction_enabled", "custom mowing direction"],
+  visualObstacle: ["visual_obstacle_detection", "visual_obstacle_detection_enabled", "visual obstacle detection"],
+  edgeReturn: ["edge_following_return_enabled", "edge-following return"],
+  autoDockMow: ["automatic_dock_mowing_enabled", "automatic dock-area mowing"]
 };
 function mergeSavedIrrigationItems(configuredItems, savedItems) {
   const configured = Array.isArray(configuredItems) ? configuredItems : [];
@@ -8217,6 +8223,7 @@ function distanceToSegment(point, line) {
 function slugify(value) {
   return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }
+enhanceGardenAnthbot(GardenMapCard);
 if (!customElements.get("garden-map-card")) {
   customElements.define("garden-map-card", GardenMapCard);
 }
@@ -8224,5 +8231,5 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "garden-map-card",
   name: "Garden Map Card",
-  description: "K\xF6z\xF6s Anthbot \xE9s locsol\xF3rendszer t\xE9rk\xE9pk\xE1rtya \u2013 v159.1"
+  description: "K\xF6z\xF6s Anthbot \xE9s locsol\xF3rendszer t\xE9rk\xE9pk\xE1rtya \u2013 v163"
 });

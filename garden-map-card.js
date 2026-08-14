@@ -1,5 +1,5 @@
-import { enhanceGardenAnthbot } from "./garden-anthbot-enhancements.js?v=162-edge7";
-// Garden Map Card v162 - unified garden, irrigation and Anthbot control
+import { enhanceGardenAnthbot } from "./garden-anthbot-enhancements.js?v=163-edge1";
+// Garden Map Card v163 - unified garden, irrigation and Anthbot control
 var DEFAULT_ZONES = [
   { id: 1, name: "Zona 1", entity: "switch.ontozovezerlo_zona_1", color: "#38bdf8" },
   { id: 2, name: "Zona 2", entity: "switch.ontozovezerlo_zona_2", color: "#22c55e" },
@@ -8231,5 +8231,5 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "garden-map-card",
   name: "Garden Map Card",
-  description: "K\xF6z\xF6s Anthbot \xE9s locsol\xF3rendszer t\xE9rk\xE9pk\xE1rtya \u2013 v162"
+  description: "K\xF6z\xF6s Anthbot \xE9s locsol\xF3rendszer t\xE9rk\xE9pk\xE1rtya \u2013 v163"
 });

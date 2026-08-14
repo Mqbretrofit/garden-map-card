@@ -1,5 +1,5 @@
 ﻿import "./irrigation-map-card.js?v=159.1";
-import { enhanceGardenAnthbot } from "./garden-anthbot-enhancements.js?v=162-edge7";
+import { enhanceGardenAnthbot } from "./garden-anthbot-enhancements.js?v=163-edge1";
 import { AnthbotMapRenderer } from "./garden-renderer.js?v=157";
 import { LANGUAGES, resolveLanguage, translate } from "./garden-i18n.js?v=132";
 import {
@@ -2798,5 +2798,5 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "garden-map-card",
   name: "Garden Map Card",
-  description: "Közös Anthbot és locsolórendszer térképkártya – v162",
+  description: "Közös Anthbot és locsolórendszer térképkártya – v163",
 });
