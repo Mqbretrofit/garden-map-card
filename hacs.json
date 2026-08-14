@@ -1,4 +1,5 @@
 {
   "name": "Garden Map Card",
-  "filename": "garden-map-card.js"
+  "filename": "garden-map-card.js",
+  "zip_release": true
 }

@@ -10,15 +10,36 @@ permissions:
 
 jobs:
   release:
-    if: contains(github.event.head_commit.message, '[release v161.8]')
+    if: contains(github.event.head_commit.message, '[release v162]')
     runs-on: ubuntu-latest
     steps:
+      - name: Check out release sources
+        uses: actions/checkout@v4
+
+      - name: Build HACS release archive
+        run: |
+          zip -9 "garden-map-card-v162.zip" \
+            garden-map-card.js \
+            garden-map-card.source.js \
+            garden-anthbot-enhancements.js \
+            garden-anthbot-i18n.js \
+            garden-anthbot-i18n-complements.js \
+            garden-renderer.js \
+            garden-calibration.js \
+            garden-geometry.js \
+            garden-i18n.js \
+            garden-i18n-complements.js \
+            irrigation-map-card.js \
+            robot.png \
+            garden.png \
+            TELEPITES.txt
+
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v161.8" \
+          gh release create "v162" "garden-map-card-v162.zip" \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
-            --title "Garden Map Card v161.8" \
-            --notes "Adds the AWS IoT/MQTT live-shadow connection state to the existing cloud and robot status line. The indicator reads MQTT: online or MQTT: offline and preserves the user-tested v161.7 mobile, irrigation and dashboard zone editor behavior."
+            --title "Garden Map Card v162" \
+            --notes "Adds the complete Anthbot control and settings interface, manual and automatic multi-zone mowing, dynamic start/pause/resume control, maintenance and diagnostics, 23-language support, and the app-style cutting-height and 5-20 cm boundary-overlap editor with animated mower preview. Empty boundary records are hidden. Existing irrigation, calibration and mobile map behavior are preserved."

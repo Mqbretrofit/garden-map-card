@@ -1,4 +1,5 @@
 ﻿import "./irrigation-map-card.js?v=159.1";
+import { enhanceGardenAnthbot } from "./garden-anthbot-enhancements.js?v=162-edge7";
 import { AnthbotMapRenderer } from "./garden-renderer.js?v=157";
 import { LANGUAGES, resolveLanguage, translate } from "./garden-i18n.js?v=132";
 import {
@@ -40,11 +41,16 @@ const NUMBER_MAP = {
   mowDirection: ["custom_mowing_direction", "custom_mowing_direction_setting", "custom mowing direction"],
   rainContinue: ["rain_continue_time", "rain_continue_time_setting", "rain continue time"],
   voiceVolume: ["voice_volume", "voice_volume_setting", "voice volume"],
+  mowCount: ["mow_count", "mow_count_setting", "mowing passes"],
+  visualObstacleLevel: ["visual_obstacle_level", "visual_obstacle_level_setting", "visual obstacle sensitivity"],
 };
 
 const SWITCH_MAP = {
   rain: ["rain_perception", "rain_perception_enabled", "rain perception"],
   customDirection: ["custom_mowing_direction_enabled", "custom mowing direction"],
+  visualObstacle: ["visual_obstacle_detection", "visual_obstacle_detection_enabled", "visual obstacle detection"],
+  edgeReturn: ["edge_following_return_enabled", "edge-following return"],
+  autoDockMow: ["automatic_dock_mowing_enabled", "automatic dock-area mowing"],
 };
 
 function mergeSavedIrrigationItems(configuredItems, savedItems) {
@@ -2782,6 +2788,8 @@ function slugify(value) {
     .replace(/^_+|_+$/g, "");
 }
 
+enhanceGardenAnthbot(GardenMapCard);
+
 if (!customElements.get("garden-map-card")) {
   customElements.define("garden-map-card", GardenMapCard);
 }
@@ -2790,5 +2798,5 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "garden-map-card",
   name: "Garden Map Card",
-  description: "Közös Anthbot és locsolórendszer térképkártya – v159.1",
+  description: "Közös Anthbot és locsolórendszer térképkártya – v162",
 });
