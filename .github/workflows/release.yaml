@@ -69,5 +69,5 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "Garden Map Card $tag" \
-              --notes "The boundary settings editor now reads the current app-compatible ridable-area definition, including records without geometry, and updates in real time when Home Assistant receives new values. A single boundary is labelled generically instead of keeping a stale numbered name, and an open editor refreshes automatically. Anthbot enhancements are now bundled directly into the main card, removing the separate enhancement-module cache mismatch. Includes the complete Anthbot control and settings interface, manual and automatic multi-zone mowing, dynamic start/pause/resume control, maintenance and diagnostics, 23-language support, and the animated 5-20 cm boundary-overlap editor. Existing irrigation, calibration and mobile map behavior are preserved."
+              --notes "Fixes outer-edge mowing control: the selected outer edge now dispatches only the dedicated start_outer_edge_mow service, and the official edgemowing robot state is recognized as confirmation. Existing irrigation, calibration, mobile map behavior, Anthbot controls, zone selection, maintenance, diagnostics and translations are preserved."
           fi

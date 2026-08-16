@@ -344,7 +344,7 @@ function enhanceGardenAnthbot(Card) {
   };
   p.createPrimaryMowingTile = function(action) {
     const labels = {start:[t(this,"startLabel"),t(this,"startSelectedTask")],pause:[t(this,"pauseTask"),t(this,"pauseTaskSub")],resume:[t(this,"resumeTask"),t(this,"resumeTaskSub")]};
-    const tile = document.createElement("button"); tile.type="button"; tile.className=`panel-tile task-action-tile ${action}`;
+    const tile = document.createElement("button"); tile.type="button"; tile.dataset.primaryMowingAction=action; tile.className=`panel-tile task-action-tile ${action}`;
     tile.innerHTML=`<strong>${labels[action][0]}</strong><span>${labels[action][1]}</span>`;
     tile.addEventListener("click",()=>this.handlePrimaryMowingAction(action)); return tile;
   };
@@ -8154,7 +8154,7 @@ var GardenMapCard = class extends HTMLElement {
     const expected = {
       start_full_mow: ["mowing", "globalmowing", "working", "cutting", "nyiras", "funyiras"],
       start_zone_mow: ["mowing", "zonemowing", "regionmowing", "working", "cutting", "nyiras", "funyiras", "zonanyiras"],
-      start_outer_edge_mow: ["mowing", "bordermowing", "edgecutting", "working", "szegelynyiras"],
+      start_outer_edge_mow: ["mowing", "bordermowing", "edgemowing", "edgecutting", "working", "szegelynyiras"],
       start_dock_edge_mow: ["mowing", "nestmowing", "working", "tolto", "kornyekeneknyirasa"],
       stop_mow: ["paused", "pause", "standby", "idle", "charging", "charge", "docked", "szunetel", "keszenlet", "toltes", "dokkolva"],
       return_to_dock: ["returning", "backtodock", "returntodock", "docking", "charging", "charge", "docked", "visszaatoltore", "toltes", "dokkolva"]

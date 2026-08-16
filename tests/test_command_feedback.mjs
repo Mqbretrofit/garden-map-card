@@ -58,6 +58,11 @@ for (const status of ["nyiras", "zonanyiras", "keszenlet", "toltes", "visszaatol
   assert.ok(source.includes(`"${status}"`), `Missing Hungarian status alias: ${status}`);
 }
 
+assert.ok(source.includes('selected?.type==="edge") return this.handleCommand("outer-edge")'), "Selected outer edge must dispatch the outer-edge command");
+assert.ok(source.includes('"outer-edge": "start_outer_edge_mow"'), "Outer-edge command must use the dedicated integration service");
+assert.ok(source.includes('"edgemowing"'), "Official outer-edge status alias is missing");
+assert.ok(source.includes("tile.dataset.primaryMowingAction=action"), "Primary mowing tile must be marked as target-dependent");
+
 assert.ok(source.includes("executeAnthbotButton(buttonEntity"), "Button controls must use feedback handling");
 assert.ok(source.includes("this.waitForCommandConfirmation(service, label, token)"), "Robot confirmation polling is missing");
 assert.ok(source.includes('["anthbot_map", "anthbot_genie_plus", "anthbot_ha"]'), "Integration domain auto-selection is missing");

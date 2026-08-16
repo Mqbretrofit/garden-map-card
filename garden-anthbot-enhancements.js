@@ -344,7 +344,7 @@ export function enhanceGardenAnthbot(Card) {
   };
   p.createPrimaryMowingTile = function(action) {
     const labels = {start:[t(this,"startLabel"),t(this,"startSelectedTask")],pause:[t(this,"pauseTask"),t(this,"pauseTaskSub")],resume:[t(this,"resumeTask"),t(this,"resumeTaskSub")]};
-    const tile = document.createElement("button"); tile.type="button"; tile.className=`panel-tile task-action-tile ${action}`;
+    const tile = document.createElement("button"); tile.type="button"; tile.dataset.primaryMowingAction=action; tile.className=`panel-tile task-action-tile ${action}`;
     tile.innerHTML=`<strong>${labels[action][0]}</strong><span>${labels[action][1]}</span>`;
     tile.addEventListener("click",()=>this.handlePrimaryMowingAction(action)); return tile;
   };
