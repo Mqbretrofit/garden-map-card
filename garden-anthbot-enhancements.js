@@ -438,7 +438,14 @@ export function enhanceGardenAnthbot(Card) {
     body.innerHTML=""; const grid=this.createPanelGrid();
     [[t(this,"bladeLife"),"cuttingComponentsLife"],[t(this,"cameraLife"),"cuttingLineLife"],[t(this,"dockContact"),"rechargeContactLife"],["WiFi","wifi"],["Bluetooth","bluetooth"],[t(this,"firmware"),"firmware"],[t(this,"gpsLatitude"),"gpsLatitude"],[t(this,"gpsLongitude"),"gpsLongitude"],[t(this,"lastUpdate"),"shadowUpdated"]].forEach(([label,key])=>grid.appendChild(this.createInfoTile(label,key)));
     body.appendChild(grid); const attrs=this.entity?.attributes||{};
-    for (const [title,data] of [[t(this,"mowingHistory"),attrs.mowing_records?.data||attrs.mowing_records||[]],[t(this,"errorHistory"),attrs.error_history||[]]]) { const box=section(this,title,title); box.querySelector(".settings-section-body").innerHTML=`<pre>${esc(JSON.stringify(data,null,2))}</pre>`; body.appendChild(box); }
+    const recordsPayload=attrs.mowing_records||{data:[]};
+    const recordsError=attrs.mowing_records_error;
+    const history=this.createSettingsSection(t(this,"mowingHistory"),"mowing-history");
+    this.renderMowingHistoryList(history.querySelector(".settings-section-body"),recordsPayload,recordsError);
+    body.appendChild(history);
+    const errors=this.createSettingsSection(t(this,"errorHistory"),"error-history");
+    errors.querySelector(".settings-section-body").innerHTML=`<pre>${esc(JSON.stringify(attrs.error_history||[],null,2))}</pre>`;
+    body.appendChild(errors);
   };
 
   p.updateRenderer = function() {

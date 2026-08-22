@@ -30,6 +30,12 @@ export function createGeometry(options = {}) {
     mapToScreen(point) {
       return mapToScreen(point, map, calibration);
     },
+    mapToScreenWithLayerCalibration(point, layerCalibration) {
+      return mapToScreenWithLayerCalibration(point, map, calibration, layerCalibration);
+    },
+    calibrateMapPoint(point, pointCalibration) {
+      return calibrateMapPoint(point, map, pointCalibration);
+    },
     screenToMap(point) {
       return screenToMap(point, map, calibration);
     },
@@ -395,7 +401,20 @@ function mapToWorld(point, bounds) {
 }
 
 function mapToScreen(point, map, calibration) {
+  // Preserve the established Garden map-calibration coordinate system.
+  // Robot/path/boundary layer calibration is composed afterwards.
   const transformed = applyCalibration(point, calibration);
+  return transformedMapPointToScreen(transformed, map);
+}
+
+function mapToScreenWithLayerCalibration(point, map, calibration, layerCalibration) {
+  const transformed = applyCalibration(point, calibration);
+  const transformedCenter = applyCalibration({ x: 0.5, y: 0.5 }, calibration);
+  const layered = calibrateMapPoint(transformed, map, layerCalibration, transformedCenter);
+  return transformedMapPointToScreen(layered, map);
+}
+
+function transformedMapPointToScreen(transformed, map) {
   const centered = {
     x: (transformed.x - 0.5) * map.width,
     y: (transformed.y - 0.5) * map.height,
@@ -427,9 +446,13 @@ function computeMapFit(size, bounds, view, aspectRatio, fit = "contain") {
   const targetRatio = Number.isFinite(Number(aspectRatio)) && Number(aspectRatio) > 0
     ? Number(aspectRatio)
     : worldRatio;
-  const canvasRatio = size.width / size.height;
-  let width = size.width;
-  let height = size.height;
+  const rotation = Number(view.rotation) || 0;
+  const quarterTurn = Math.abs(Math.sin(rotation)) > Math.abs(Math.cos(rotation));
+  const fitWidth = quarterTurn ? size.height : size.width;
+  const fitHeight = quarterTurn ? size.width : size.height;
+  const canvasRatio = fitWidth / fitHeight;
+  let width = fitWidth;
+  let height = fitHeight;
 
   if (fit === "cover") {
     if (targetRatio > canvasRatio) {
@@ -448,7 +471,7 @@ function computeMapFit(size, bounds, view, aspectRatio, fit = "contain") {
     height: Math.max(1, height * view.zoom),
     centerX: size.width / 2 + view.panX,
     centerY: size.height / 2 + view.panY,
-    rotation: Number(view.rotation) || 0,
+    rotation,
   };
 }
 
@@ -485,6 +508,27 @@ function removeCalibration(point, calibration) {
   return {
     x: rotated.x / calibration.scaleX + 0.5,
     y: rotated.y / calibration.scaleY + 0.5,
+  };
+}
+
+// Apply an independent layer calibration on the already aligned map axes.
+// Physical pixel units keep rotation aspect-correct on non-square maps.
+export function calibrateMapPoint(
+  point,
+  map,
+  calibration = {},
+  center = { x: 0.5, y: 0.5 },
+) {
+  const next = normalizeCalibration(calibration);
+  const centered = {
+    x: (Number(point.x) - Number(center.x)) * map.width * next.scaleX,
+    y: (Number(point.y) - Number(center.y)) * map.height * next.scaleY,
+  };
+  const rotated = rotatePoint(centered, next.rotation);
+
+  return {
+    x: rotated.x / map.width + Number(center.x) + next.offsetX,
+    y: rotated.y / map.height + Number(center.y) + next.offsetY,
   };
 }
 

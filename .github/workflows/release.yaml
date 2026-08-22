@@ -69,5 +69,5 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "Garden Map Card $tag" \
-              --notes "Fixes outer-edge mowing control: the selected outer edge now dispatches only the dedicated start_outer_edge_mow service, and the official edgemowing robot state is recognized as confirmation. Existing irrigation, calibration, mobile map behavior, Anthbot controls, zone selection, maintenance, diagnostics and translations are preserved."
+              --notes "Synchronizes the Garden Map Card with the Anthbot Map Card v2.3 features: separate map, robot and mowing-path calibration; corrected calibration directions and robot heading; mowing-history cards and record details under Diagnostics; Anthbot-compatible boundary rendering; complete calibration and history translations in all 23 supported languages; and preserved irrigation, zone selection, maintenance and controls. Known limitation: map display is still not supported for ANTHBOT M5/M9 models."
           fi

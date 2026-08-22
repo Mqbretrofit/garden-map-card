@@ -1,4 +1,4 @@
-﻿import { createGeometry, getBoundaryPaths, getWorldBounds, getZonePoints, getZones, normalizePoints } from "./garden-geometry.js?v=1";
+﻿import { createGeometry, getBoundaryPaths, getWorldBounds, getZonePoints, getZones, normalizePoints } from "./garden-geometry.js?v=2";
 
 const COLORS = Object.freeze({
   background: "#18202a",
@@ -125,6 +125,11 @@ export class AnthbotMapRenderer {
 
   setRobotCalibration(robotCalibration) {
     this.options.robotCalibration = robotCalibration;
+    this.draw();
+  }
+
+  setMowingPathCalibration(mowingPathCalibration) {
+    this.options.mowingPathCalibration = mowingPathCalibration;
     this.draw();
   }
 
@@ -507,7 +512,7 @@ export class AnthbotMapRenderer {
     const width = Number(options.width) || 7;
     const segments = buildMowedPathSegments(
       trail,
-      (point) => this.robotPositionToScreen(geometry, point),
+      (point) => this.mowingPathPositionToScreen(geometry, point),
       Number(options.canvasDiagonal) || 800,
     );
     if (!segments.length) return;
@@ -557,8 +562,11 @@ export class AnthbotMapRenderer {
       Number.isFinite(Number(point?.x)) && Number.isFinite(Number(point?.y)),
     ) || this.state.pose;
     if (!anchor) return clamp(coverageMm / 35, 10, 48);
-    const a = this.robotPositionToScreen(geometry, anchor);
-    const b = this.robotPositionToScreen(geometry, { x: Number(anchor.x) + coverageMm, y: Number(anchor.y) });
+    const a = this.mowingPathPositionToScreen(geometry, anchor);
+    const b = this.mowingPathPositionToScreen(geometry, {
+      x: Number(anchor.x) + coverageMm,
+      y: Number(anchor.y),
+    });
     return clamp(Math.hypot(b.x - a.x, b.y - a.y), 10, 64);
   }
 
@@ -922,7 +930,7 @@ export class AnthbotMapRenderer {
       ? Number(this.options.robotMowingHeadingOffset ?? this.options.robot_mowing_heading_offset ?? 0) || 0
       : 0;
     const cloudYaw =
-      degreesToRadians(this.cloudHeadingDegrees(pose)) +
+      cloudHeadingToCanvasRadians(this.cloudHeadingDegrees(pose)) +
       geometry.map.rotation +
       degreesToRadians(Number(this.options.robotHeadingOffset ?? this.options.robot_heading_offset) || 0) +
       degreesToRadians(mowingHeadingOffset) +
@@ -1104,16 +1112,15 @@ export class AnthbotMapRenderer {
       return null;
     }
 
-    const last = this.robotPositionToScreen(geometry, trail[trail.length - 1]);
-    const previous = this.robotPositionToScreen(geometry, trail[trail.length - 2]);
+    const last = this.mowingPathPositionToScreen(geometry, trail[trail.length - 1]);
+    const previous = this.mowingPathPositionToScreen(geometry, trail[trail.length - 2]);
     const dx = last.x - previous.x;
     const dy = last.y - previous.y;
     if (Math.hypot(dx, dy) < 6) {
       return this.robotHeading;
     }
 
-    const nextHeading =
-      Math.atan2(dy, dx) + (Number(this.options.robotCalibration?.rotation) || 0);
+    const nextHeading = Math.atan2(dy, dx);
     this.robotHeading =
       this.robotHeading === null ? nextHeading : smoothAngle(this.robotHeading, nextHeading, 0.35);
     return this.robotHeading;
@@ -1121,12 +1128,12 @@ export class AnthbotMapRenderer {
 
   cloudHeadingDegrees(pose) {
     const headingCandidates = [
+      this.state.raw_pose?.heading,
+      pose?.heading,
       this.state.cur_pose?.heading,
       this.state.curPose?.heading,
       this.state.map_scan_pose?.heading,
       this.state.mapScanPose?.heading,
-      this.state.raw_pose?.heading,
-      pose?.heading,
     ];
     for (const value of headingCandidates) {
       const heading = Number(value);
@@ -1136,12 +1143,12 @@ export class AnthbotMapRenderer {
     }
 
     const yawCandidates = [
+      this.state.raw_pose?.yaw,
+      pose?.yaw,
       this.state.cur_pose?.yaw,
       this.state.curPose?.yaw,
       this.state.map_scan_pose?.yaw,
       this.state.mapScanPose?.yaw,
-      this.state.raw_pose?.yaw,
-      pose?.yaw,
     ];
     for (const value of yawCandidates) {
       const yaw = Number(value);
@@ -1155,10 +1162,16 @@ export class AnthbotMapRenderer {
   robotPositionToScreen(geometry, point) {
     const robotCalibration = this.options.robotCalibration || {};
     const mapPoint = geometry.worldToMap({ x: Number(point.x), y: Number(point.y) });
-    return geometry.mapToScreen({
-      x: mapPoint.x + (Number(robotCalibration.offsetX) || 0),
-      y: mapPoint.y + (Number(robotCalibration.offsetY) || 0),
+    return geometry.mapToScreenWithLayerCalibration(mapPoint, {
+      offsetX: Number(robotCalibration.offsetX) || 0,
+      offsetY: Number(robotCalibration.offsetY) || 0,
     });
+  }
+
+  mowingPathPositionToScreen(geometry, point) {
+    const mowingPathCalibration = this.options.mowingPathCalibration || {};
+    const mapPoint = geometry.worldToMap({ x: Number(point.x), y: Number(point.y) });
+    return geometry.mapToScreenWithLayerCalibration(mapPoint, mowingPathCalibration);
   }
 
   isMowingState() {
@@ -1292,6 +1305,12 @@ function rotateAround(point, center, angle) {
 
 function degreesToRadians(degrees) {
   return (degrees * Math.PI) / 180;
+}
+
+// Anthbot's cloud heading uses the opposite horizontal axis from the canvas:
+// up/down already match, while left/right must be mirrored.
+export function cloudHeadingToCanvasRadians(value) {
+  return normalizeAngle(degreesToRadians(180 - normalizeHeadingDegrees(value)));
 }
 
 function milliRadiansToDegrees(value) {
@@ -1547,28 +1566,10 @@ function rasterColor(value) {
 }
 
 function applyMapCalibration(geometry, calibration = {}) {
-  const next = {
-    offsetX: Number(calibration.offsetX) || 0,
-    offsetY: Number(calibration.offsetY) || 0,
-    scaleX: Number(calibration.scaleX) || 1,
-    scaleY: Number(calibration.scaleY) || 1,
-    rotation: Number(calibration.rotation) || 0,
-  };
-
   return {
     worldToScreen(point) {
       const mapPoint = geometry.worldToMap(point);
-      const centered = {
-        x: (Number(mapPoint.x) - 0.5) * next.scaleX,
-        y: (Number(mapPoint.y) - 0.5) * next.scaleY,
-      };
-      const cos = Math.cos(next.rotation);
-      const sin = Math.sin(next.rotation);
-      const calibrated = {
-        x: centered.x * cos - centered.y * sin + 0.5 + next.offsetX,
-        y: centered.x * sin + centered.y * cos + 0.5 + next.offsetY,
-      };
-      return geometry.mapToScreen(calibrated);
+      return geometry.mapToScreenWithLayerCalibration(mapPoint, calibration);
     },
   };
 }

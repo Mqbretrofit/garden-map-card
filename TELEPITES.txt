@@ -1,10 +1,10 @@
-Garden Map Card v162 – telepítés
+Garden Map Card v166 – telepítés
 
 1. Másold a teljes garden-map-card mappát ide:
    /config/www/garden-map-card/
 
 2. A Home Assistant erőforrás URL-je:
-   /hacsfiles/garden-map-card/garden-map-card.js?v=162
+   /hacsfiles/garden-map-card/garden-map-card.js?v=166
 
 3. Erőforrás típusa: JavaScript-modul.
 
